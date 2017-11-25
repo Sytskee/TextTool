@@ -494,56 +494,56 @@ def pipeline_and_parameters2(text_classifier, search_scoring, result_scorings, f
         'clf__class_weight': [None],  # Weighted vs non-weighted classes
     }, do_stemming=True, scoring=search_scoring, result_scorings=result_scorings)  # Stem keywords
 
-if __name__ == "__main__":
-    freeze_support()
-
-    # Set variable to language of dataset, e.g. 'dutch', 'english' or any other language supported by NLTK
-    language = 'dutch'
-
-    # Set path to Main folder with dataset on your computer that contains the categorized subfolders (see README file for more information).
-    # To test the script on the 20 Newsgroups dataset, use: file_path = 'fetch_20newsgroups'
-    file_path = r'C:\Users\Sytske\Desktop\InterapyTestJoost'
-    #file_path = 'fetch_20newsgroups'
-
-    # Create the classifier with the language and dataset:
-    text_classifier = TextClassifier(language, file_path)
-
-    print_file = open(text_classifier.full_output_file_path, 'w')
-    # print("%d documents (%d development, %d test)" % (len(self.data.filenames), len(self.development_data), len(self.test_data)))
-    print("%d documents" % len(text_classifier.data.filenames), file=print_file)
-    print("%d categories" % len(text_classifier.data.target_names), file=print_file)
-    print("%d groups" % len(text_classifier.train_test_splitter), file=print_file)
-    print(text_classifier.train_test_splitter, file=print_file)
-    print(file=print_file)
-
-    if os.path.isdir(file_path):
-        dirs = [os.path.join(file_path, o) for o in os.listdir(file_path) if
-                os.path.isdir(os.path.join(file_path, o))]
-        number_of_classes = dirs.__len__()
-    else:
-        number_of_classes = -1
-
-    number_of_groups = text_classifier.get_groups_counter()
-
-    for i in range(number_of_groups):
-        text_classifier.set_next_group_data(i)
-
-        if number_of_classes == 2:
-            # For binary classifiers: ['accuracy', 'precision', 'recall', 'f1']
-            scorings = ['f1']
-        else:
-            # For multiclass classifiers: ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted'] or
-            #                             ['accuracy', 'precision_micro', 'recall_micro', 'f1_micro'] or
-            #                             ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro']
-            scorings = ['f1_weighted']
-
-
-        # Apply pipeline and parameters:
-        for scoring in scorings:
-            pipeline_and_parameters(text_classifier, scoring, [result_scoring for result_scoring in scorings if result_scoring is not scoring], text_classifier.development_filenames, file_path)
-            text_classifier.train_and_predict()
-
-
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
+# if __name__ == "__main__":
+#     freeze_support()
+#
+#     # Set variable to language of dataset, e.g. 'dutch', 'english' or any other language supported by NLTK
+#     language = 'dutch'
+#
+#     # Set path to Main folder with dataset on your computer that contains the categorized subfolders (see README file for more information).
+#     # To test the script on the 20 Newsgroups dataset, use: file_path = 'fetch_20newsgroups'
+#     file_path = r'C:\Users\Sytske\Desktop\InterapyTestJoost'
+#     #file_path = 'fetch_20newsgroups'
+#
+#     # Create the classifier with the language and dataset:
+#     text_classifier = TextClassifier(language, file_path)
+#
+#     print_file = open(text_classifier.full_output_file_path, 'w')
+#     # print("%d documents (%d development, %d test)" % (len(self.data.filenames), len(self.development_data), len(self.test_data)))
+#     print("%d documents" % len(text_classifier.data.filenames), file=print_file)
+#     print("%d categories" % len(text_classifier.data.target_names), file=print_file)
+#     print("%d groups" % len(text_classifier.train_test_splitter), file=print_file)
+#     print(text_classifier.train_test_splitter, file=print_file)
+#     print(file=print_file)
+#
+#     if os.path.isdir(file_path):
+#         dirs = [os.path.join(file_path, o) for o in os.listdir(file_path) if
+#                 os.path.isdir(os.path.join(file_path, o))]
+#         number_of_classes = dirs.__len__()
+#     else:
+#         number_of_classes = -1
+#
+#     number_of_groups = text_classifier.get_groups_counter()
+#
+#     for i in range(number_of_groups):
+#         text_classifier.set_next_group_data(i)
+#
+#         if number_of_classes == 2:
+#             # For binary classifiers: ['accuracy', 'precision', 'recall', 'f1']
+#             scorings = ['f1']
+#         else:
+#             # For multiclass classifiers: ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted'] or
+#             #                             ['accuracy', 'precision_micro', 'recall_micro', 'f1_micro'] or
+#             #                             ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro']
+#             scorings = ['f1_weighted']
+#
+#
+#         # Apply pipeline and parameters:
+#         for scoring in scorings:
+#             pipeline_and_parameters(text_classifier, scoring, [result_scoring for result_scoring in scorings if result_scoring is not scoring], text_classifier.development_filenames, file_path)
+#             text_classifier.train_and_predict()
+#
+#
+# ########################################################################################################################
+# ########################################################################################################################
+# ########################################################################################################################
