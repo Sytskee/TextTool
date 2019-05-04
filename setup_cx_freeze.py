@@ -101,7 +101,7 @@ if target_platform == _64_BIT:
 
 # Dependencies are automatically detected, but it might need fine tuning.
 build_exe_options = dict(
-    packages=['os', 'nltk', 'csv', 'numpy'],
+    packages=['os', 'nltk', 'csv', 'numpy', 'matplotlib'],
     includes=['tkinter', 'numpy.core._methods', 'numpy.lib.format', 'numpy.core.multiarray'],
     include_files=[os.path.dirname(scipy.__file__),
                    r'.\nltk_data\\']

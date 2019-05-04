@@ -21,24 +21,19 @@ from datetime import datetime
 import logging
 import sys
 import os
-import csv
 import pickle
 import traceback
 
 from sklearn.datasets import load_files, fetch_20newsgroups
 from sklearn.metrics import classification_report
 from sklearn.grid_search import GridSearchCV
-from sklearn.cross_validation import LabelKFold, LeaveOneLabelOut, StratifiedKFold
-from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.feature_extraction import DictVectorizer
+from sklearn.cross_validation import LabelKFold
+from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.preprocessing import MaxAbsScaler
 from sklearn.svm import SVC, LinearSVC
 from sklearn.feature_selection import chi2
 from sklearn.metrics import confusion_matrix
 from sklearn import metrics
-from io import StringIO
-from contextlib import redirect_stdout, redirect_stderr
 from multiprocessing import freeze_support
 
 import nltk
@@ -49,8 +44,8 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from CustomTokenizer import CustomTokenizer
-from SelectAtMostKBest import SelectAtMostKBest
+from Tokenizers.CustomTokenizer import CustomTokenizer
+from feature_selection.SelectAtMostKBest import SelectAtMostKBest
 
 class TextClassifierGroups:
     def __init__(self, language, data_set_path, status_report_queue=None):
@@ -500,7 +495,7 @@ if __name__ == "__main__":
 
     # Set path to Main folder with dataset on your computer that contains the categorized subfolders (see README file for more information).
     # To test the script on the 20 Newsgroups dataset, use: file_path = 'fetch_20newsgroups'
-    file_path = r'C:\Users\Sytske\Desktop\Thinking_2class'
+    file_path = r'C:\Users\Sytske\Desktop\Ingrid\Dataset\CompleteThinking\CompleteThinking_2class'
     #file_path = 'fetch_20newsgroups'
 
     # Create the classifier with the language and dataset:

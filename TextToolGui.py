@@ -25,10 +25,8 @@ else:
 #SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from TextClassifier import TextClassifier
-from CustomTokenizer import CustomTokenizer
-from SelectAtMostKBest import SelectAtMostKBest
-from TextClassifier import pipeline_and_parameters as pipeline_and_parameters
+from classifier.TextClassifier import TextClassifier
+from classifier.TextClassifier import pipeline_and_parameters as pipeline_and_parameters
 
 class TextToolGui(object):
     def __init__(self, window):
