@@ -15,42 +15,33 @@ by O. Grisel, P. Prettenhofer, and M. Blondel. This is open source code publishe
 Retrieved on 01-08-2016 from: http://scikit-learn.org/0.15/auto_examples/grid_search_text_feature_extraction.html
 '''
 
+import logging
+import os
+import pickle
+import sys
+import traceback
+from datetime import datetime
+from multiprocessing import freeze_support
 from pprint import PrettyPrinter
 from time import time
-from datetime import datetime
-import logging
-import sys
-import os
-import csv
-import pickle
-import traceback
 
-from sklearn.datasets import load_files, fetch_20newsgroups
-from sklearn.metrics import classification_report
-from sklearn.grid_search import GridSearchCV
-from sklearn.cross_validation import LabelKFold, LeaveOneLabelOut, StratifiedKFold
-from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.feature_extraction import DictVectorizer
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.preprocessing import MaxAbsScaler
-from sklearn.svm import SVC, LinearSVC
-from sklearn.feature_selection import chi2
-from sklearn.metrics import confusion_matrix
-from sklearn import metrics
-from io import StringIO
-from contextlib import redirect_stdout, redirect_stderr
-from multiprocessing import freeze_support
-
+import matplotlib.pyplot as plt
 import nltk
 import numpy as np
+from sklearn import metrics
+from sklearn.cross_validation import StratifiedKFold
+from sklearn.datasets import load_files, fetch_20newsgroups
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_selection import chi2
+from sklearn.grid_search import GridSearchCV
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC, LinearSVC
 
-# Fix for placing helper files in the same folder
-PACKAGE_PARENT = '..'
-SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
-sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+from feature_extraction.text.CustomTokenizer import CustomTokenizer
+from feature_selection.SelectAtMostKBest import SelectAtMostKBest
 
-from CustomTokenizer import CustomTokenizer
-from SelectAtMostKBest import SelectAtMostKBest
 
 class TextClassifier:
     def __init__(self, language, data_set_path, status_report_queue=None):
@@ -76,20 +67,22 @@ class TextClassifier:
         output_file = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '_0.txt'
         self.full_output_file_path = os.path.join(output_path, output_file)
 
-        #self.groups = []
+        # self.groups = []
         self.group_number = -1
 
         self.report_status('Loading data ...')
 
         # Only used when 20 Newsgroup test set is defined as input dataset
         if data_set_path == 'fetch_20newsgroups':
-            self.data = fetch_20newsgroups(categories=['alt.atheism', 'comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware', 'comp.windows.x', 'misc.forsale'],
-                                           remove=('headers', 'footers', 'quotes'))      # Use 3 of the 20 Newsgroups categories
+            self.data = fetch_20newsgroups(
+                categories=['alt.atheism', 'comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware',
+                            'comp.sys.mac.hardware', 'comp.windows.x', 'misc.forsale'],
+                remove=('headers', 'footers', 'quotes'))  # Use 3 of the 20 Newsgroups categories
         else:
             # Use 'utf-8-sig' for files with BOM
-            self.data = load_files(data_set_path, encoding='utf-8')     # The path to and encoding of the input dataset
+            self.data = load_files(data_set_path, encoding='utf-8')  # The path to and encoding of the input dataset
 
-            #for full_file_path in self.data.filenames:
+            # for full_file_path in self.data.filenames:
             '''
             for index in range(0, self.data.filenames.size):
                 path, filename = os.path.split(self.data.filenames[index])
@@ -97,9 +90,9 @@ class TextClassifier:
                 self.groups.append(groupName)
             '''
 
-        #self.train_test_splitter = LeaveOneLabelOut(self.groups)
+        # self.train_test_splitter = LeaveOneLabelOut(self.groups)
         self.train_test_splitter = StratifiedKFold(y=self.data.target, n_folds=5)
-        #self.train_test_splitter = LabelKFold(labels=self.groups,  n_folds=5)
+        # self.train_test_splitter = LabelKFold(labels=self.groups,  n_folds=5)
         self.development_data_indexes = []
         self.test_data_indexes = []
 
@@ -111,7 +104,8 @@ class TextClassifier:
 
     def report_status(self, message):
         if self.status_report_queue is not None:
-            self.status_report_queue.put('{} -> {}: {}'.format(datetime.now().strftime('%H:%M:%S'), self.group_number + 1, message))
+            self.status_report_queue.put(
+                '{} -> {}: {}'.format(datetime.now().strftime('%H:%M:%S'), self.group_number + 1, message))
 
     def set_pipeline(self, pipeline):
         self.pipeline = pipeline
@@ -133,7 +127,7 @@ class TextClassifier:
         self.development_data = np.array(self.data.data)[self.development_data_indexes[group_number]]
         self.development_target = np.array(self.data.target)[self.development_data_indexes[group_number]]
         self.development_filenames = np.array(self.data.filenames)[self.development_data_indexes[group_number]]
-        #self.development_groups = np.array(self.groups)[self.development_data_indexes[group_number]]
+        # self.development_groups = np.array(self.groups)[self.development_data_indexes[group_number]]
 
         self.test_data = np.array(self.data.data)[self.test_data_indexes[group_number]]
         self.test_target = np.array(self.data.target)[self.test_data_indexes[group_number]]
@@ -143,6 +137,7 @@ class TextClassifier:
         print(debug_line, file=print_file)
         print(file=print_file)
 
+        sys.stdout.flush()
         print_file.close()
 
     def train_and_predict(self):
@@ -160,13 +155,12 @@ class TextClassifier:
             print(debug_line, file=print_file)
             return
 
-
         self.grid_search = GridSearchCV(self.pipeline,
                                         self.parameters,
                                         n_jobs=-1,
                                         verbose=1,
                                         scoring=self.scoring,
-                                        #cv=LabelKFold(labels=self.development_groups, n_folds=5),
+                                        # cv=LabelKFold(labels=self.development_groups, n_folds=5),
                                         cv=StratifiedKFold(y=self.development_target, n_folds=5),
                                         refit=True)
 
@@ -211,6 +205,10 @@ class TextClassifier:
         with open(pickle_file, 'bw') as file:
             pickle.dump(self.grid_search, file)
 
+        label_file = self.current_output_file_path.replace('.txt', '.lbl')
+        with open(label_file, 'bw') as file:
+            pickle.dump(self.data.target_names, file)
+
         self.report_status("Done pickling model")
 
         self.report_status("Start writing the output to file, check the output file for the results...")
@@ -224,7 +222,6 @@ class TextClassifier:
         print(file=print_file)
         print(file=print_file)
 
-
         print("Grid scores on development set:", file=print_file)
         print(file=print_file)
         for params, mean_score, scores in self.grid_search.grid_scores_:
@@ -236,14 +233,15 @@ class TextClassifier:
         print(file=print_file)
         print("Per class classification report for the final classifier:", file=print_file)
         print(file=print_file)
-        print("The final model is trained on the full development set using the selected parameter settings found by GridSearchCV.", file=print_file)
+        print(
+            "The final model is trained on the full development set using the selected parameter settings found by GridSearchCV.",
+            file=print_file)
         print("The scores for the final model are computed on the full test set.", file=print_file)
         print(file=print_file)
         y_pred = self.grid_search.predict(self.test_data)
         print(classification_report(self.test_target, y_pred, target_names=self.data.target_names), file=print_file)
         print(file=print_file)
         print(file=print_file)
-
 
         if self.data.target.max() + 1 <= 2:
             # Print the performance score of the final model:
@@ -259,20 +257,28 @@ class TextClassifier:
             # For multiclass classification use:
             print("Performance metrics final model on test data:", file=print_file)
             print("Accuracy:", metrics.accuracy_score(self.test_target, y_pred), file=print_file)
-            print("Weighted Recall:", metrics.recall_score(self.test_target, y_pred, average='weighted', pos_label=None), file=print_file)              # Or average='micro' / average='macro'
-            print("Weighted Precision:", metrics.precision_score(self.test_target, y_pred, average='weighted', pos_label=None), file=print_file)        # Or average='micro' / average='macro'
-            print("Weighted F1:", metrics.f1_score(self.test_target, y_pred, average='weighted', pos_label=None), file=print_file)                      # Or average='micro' / average='macro'
+            print("Weighted Recall:",
+                  metrics.recall_score(self.test_target, y_pred, average='weighted', pos_label=None),
+                  file=print_file)  # Or average='micro' / average='macro'
+            print("Weighted Precision:",
+                  metrics.precision_score(self.test_target, y_pred, average='weighted', pos_label=None),
+                  file=print_file)  # Or average='micro' / average='macro'
+            print("Weighted F1:", metrics.f1_score(self.test_target, y_pred, average='weighted', pos_label=None),
+                  file=print_file)  # Or average='micro' / average='macro'
             print(file=print_file)
             print(file=print_file)
 
         # Define the number of features to print in the output:
         print_n = 50
         print('Top %d keywords' % (print_n), file=print_file)
-        #self.print_most_informative(self.development_data, self.development_target, self.development_filenames, self.data.target_names, print_n)
+        # self.print_most_informative(self.development_data, self.development_target, self.development_filenames, self.data.target_names, print_n)
         self.print_most_informative_new(self.development_data, self.development_target, self.development_filenames,
-                                    self.data.target_names, print_file, print_n)
+                                        self.data.target_names, print_file, print_n)
         print(file=print_file)
         print(file=print_file)
+
+        # Turn interactive plotting off
+        plt.ioff()
 
         # Print the confusion matrix for the final model:
         cm = confusion_matrix(self.test_target, y_pred)
@@ -281,8 +287,37 @@ class TextClassifier:
         print(cm, file=print_file)
         print(file=print_file)
 
+        plt.figure()
+        self.plot_confusion_matrix(cm)
+
+        figure_file_path = self.full_output_file_path.replace('_0.txt', '_' + str(self.group_number) + '.png')
+        plt.savefig(figure_file_path, bbox_inches='tight', dpi=1000)
+
+        cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print('Normalized confusion matrix', file=print_file)
+        print(cm_normalized, file=print_file)
+        print(file=print_file)
+
+        plt.figure()
+        self.plot_confusion_matrix(cm_normalized, title='Normalized confusion matrix')
+
+        figure_file_path = self.full_output_file_path.replace('_0.txt',
+                                                              '_' + str(self.group_number) + '_normalized.png')
+        plt.savefig(figure_file_path, bbox_inches='tight', dpi=1000)
+
         sys.stdout.flush()
         print_file.close()
+
+    def plot_confusion_matrix(self, cm, title='Confusion matrix', cmap=plt.cm.Blues):
+        plt.imshow(cm, interpolation='nearest', cmap=cmap)
+        plt.title(title)
+        plt.colorbar()
+        tick_marks = np.arange(len(self.data.target_names))
+        plt.xticks(tick_marks, self.data.target_names, rotation=45)
+        plt.yticks(tick_marks, self.data.target_names)
+        plt.tight_layout()
+        plt.ylabel('True label')
+        plt.xlabel('Predicted label')
 
     def print_most_informative(self, X, y, filenames, categories, print_file, n):
         vectorizer = self.grid_search.best_estimator_.named_steps['union'].transformer_list[0][1].named_steps['vect']
@@ -311,8 +346,8 @@ class TextClassifier:
 
         i = 0
 
-        while(True):
-            value_to_search = sorted_chi2_values[len(sorted_chi2_values)-1-i]
+        while (True):
+            value_to_search = sorted_chi2_values[len(sorted_chi2_values) - 1 - i]
             feature_indexes = [i for i, x in enumerate(chi2_values) if x == value_to_search]
 
             for feature_index in feature_indexes:
@@ -329,7 +364,8 @@ class TextClassifier:
                             else:
                                 count[category][feature_names[feature_index]] = words_in_file[feature_index]
 
-                row = '%25s  |  %2.4f  |  %1.3f' % (feature_names[feature_index], chi2_values[feature_index], p_values[feature_index])
+                row = '%25s  |  %2.4f  |  %1.3f' % (
+                    feature_names[feature_index], chi2_values[feature_index], p_values[feature_index])
 
                 for category in categories:
                     if feature_names[feature_index] in count[category]:
@@ -374,8 +410,8 @@ class TextClassifier:
 
         union_result_array = text_step_result.toarray()
 
-        sorted_chi2_values = np.sort(chi2.scores_)[::-1] # sort and reverse
-        sorted_chi2_values = sorted_chi2_values[np.logical_not(np.isnan(sorted_chi2_values))] # remove nan values
+        sorted_chi2_values = np.sort(chi2.scores_)[::-1]  # sort and reverse
+        sorted_chi2_values = sorted_chi2_values[np.logical_not(np.isnan(sorted_chi2_values))]  # remove nan values
 
         # Printing
         header_line = '%25s  |  %6s  |  %5s' % ('feature name', 'CHI2', 'P')
@@ -392,10 +428,11 @@ class TextClassifier:
             feature_indexes = [i for i, x in enumerate(chi2.scores_) if x == value_to_search]
 
             if feature_indexes.__len__ == 0:
-                print("No feature indexes found for value '" + value_to_search + "', trying the next one", file=print_file)
+                print("No feature indexes found for value '" + value_to_search + "', trying the next one",
+                      file=print_file)
                 i += 1
 
-            if value_to_search ==  float('nan'):
+            if value_to_search == float('nan'):
                 print("Value to search is 'nan', trying the next one", file=print_file)
                 i += 1
 
@@ -410,14 +447,17 @@ class TextClassifier:
 
                     if feature_names[feature_index].startswith('text__'):
                         if feature_names[feature_index] in count[category]:
-                            count[category][feature_names[feature_index]] += text_vectorizer_result[id_in_development_set, feature_index]
+                            count[category][feature_names[feature_index]] += text_vectorizer_result[
+                                id_in_development_set, feature_index]
                         else:
-                            count[category][feature_names[feature_index]] = text_vectorizer_result[id_in_development_set, feature_index]
+                            count[category][feature_names[feature_index]] = text_vectorizer_result[
+                                id_in_development_set, feature_index]
                     else:
-                        count[category][feature_names[feature_index]] = mean_feature_values[category][feature_names[feature_index].replace('file__', '')]
+                        count[category][feature_names[feature_index]] = mean_feature_values[category][
+                            feature_names[feature_index].replace('file__', '')]
 
-
-                row = '%25s  |  %2.4f  |  %1.3f' % (feature_names[feature_index], chi2.scores_[feature_index], chi2.pvalues_[feature_index])
+                row = '%25s  |  %2.4f  |  %1.3f' % (
+                    feature_names[feature_index], chi2.scores_[feature_index], chi2.pvalues_[feature_index])
 
                 for category in categories:
                     if feature_names[feature_index] in count[category]:
@@ -439,7 +479,6 @@ class TextClassifier:
         print(file=print_file)
 
 
-
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -448,26 +487,30 @@ class TextClassifier:
 def pipeline_and_parameters(text_classifier, search_scoring, result_scorings, file_names, cvs_files_path):
     text_classifier.set_pipeline(Pipeline([
         ('text', Pipeline([
-            ('vect', CountVectorizer(tokenizer=CustomTokenizer(text_classifier.language, True), lowercase=True, strip_accents='unicode', analyzer='word')),
+            ('vect', CountVectorizer(tokenizer=CustomTokenizer(text_classifier.language, True), lowercase=True,
+                                     strip_accents='unicode', analyzer='word')),
             ('tfidf', TfidfTransformer()),
         ])),
 
         ('chi2', SelectAtMostKBest(chi2)),
-        ('clf', LinearSVC()),     # Or ('clf', SVC(kernel='linear')),
+        ('clf', LinearSVC()),  # Or ('clf', SVC(kernel='linear')),
     ]))
 
-    chi__k = list(range(10, 501, 20))                                                                        # Set parameter range + step size for Select K best features
+    chi__k = list(range(10, 501, 20))  # Set parameter range + step size for Select K best features
     chi__k.append('all')
 
     text_classifier.set_parameters({
-        'text__vect__min_df': [1, 2, 3],                                                              # Number of training documents a term should occur in
-        'text__vect__ngram_range': [(1, 1), (2, 2), (3, 3), (1, 3)],                                  # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
-        'text__vect__stop_words': [nltk.corpus.stopwords.words(text_classifier.language), None],      # Do/do not remove stopwords
-        'text__tfidf__use_idf': [True, False],                                                        # Weight terms by tf or tfidf
-        'chi2__k': chi__k,                                                                                   # Select K most informative features
-        'clf__C': [1, 2, 3, 10, 100, 1000],                                                                  # Compare different values for C parameter
-        'clf__class_weight': ['balanced'],                                                                   # Weighted vs non-weighted classes
-    }, do_stemming=True, scoring=search_scoring, result_scorings=result_scorings)                            # Stem keywords
+        'text__vect__min_df': [1, 2, 3],  # Number of training documents a term should occur in
+        'text__vect__ngram_range': [(1, 1), (2, 2), (3, 3), (1, 3)],
+        # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
+        'text__vect__stop_words': [nltk.corpus.stopwords.words(text_classifier.language), None],
+        # Do/do not remove stopwords
+        'text__tfidf__use_idf': [True, False],  # Weight terms by tf or tfidf
+        'chi2__k': chi__k,  # Select K most informative features
+        'clf__C': [1, 2, 3, 10, 100, 1000],  # Compare different values for C parameter
+        'clf__class_weight': ['balanced'],  # Weighted vs non-weighted classes
+    }, do_stemming=True, scoring=search_scoring, result_scorings=result_scorings)  # Stem keywords
+
 
 def pipeline_and_parameters2(text_classifier, search_scoring, result_scorings, file_names, cvs_files_path):
     text_classifier.set_pipeline(Pipeline([
@@ -486,13 +529,14 @@ def pipeline_and_parameters2(text_classifier, search_scoring, result_scorings, f
 
     text_classifier.set_parameters({
         'text__vect__min_df': [1],  # Number of training documents a term should occur in
-        'text__vect__ngram_range': [(1, 1)], # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
-        'text__vect__stop_words': [None], # Do/do not remove stopwords
+        'text__vect__ngram_range': [(1, 1)],  # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
+        'text__vect__stop_words': [None],  # Do/do not remove stopwords
         'text__tfidf__use_idf': [False],  # Weight terms by tf or tfidf
         'chi2__k': chi__k,  # Select K most informative features
         'clf__C': [1],  # Compare different values for C parameter
         'clf__class_weight': [None],  # Weighted vs non-weighted classes
     }, do_stemming=True, scoring=search_scoring, result_scorings=result_scorings)  # Stem keywords
+
 
 # if __name__ == "__main__":
 #     freeze_support()
@@ -502,19 +546,22 @@ def pipeline_and_parameters2(text_classifier, search_scoring, result_scorings, f
 #
 #     # Set path to Main folder with dataset on your computer that contains the categorized subfolders (see README file for more information).
 #     # To test the script on the 20 Newsgroups dataset, use: file_path = 'fetch_20newsgroups'
-#     file_path = r'C:\Users\Sytske\Desktop\InterapyTestJoost'
-#     #file_path = 'fetch_20newsgroups'
+#     file_path = r'C:\Users\Sytske\Desktop\Ingrid\Dataset\CompleteThinking\Thinking'
+#     # file_path = 'fetch_20newsgroups'
 #
 #     # Create the classifier with the language and dataset:
 #     text_classifier = TextClassifier(language, file_path)
 #
-#     print_file = open(text_classifier.full_output_file_path, 'w')
+#     print_file = open(text_classifier.full_output_file_path, 'a')
 #     # print("%d documents (%d development, %d test)" % (len(self.data.filenames), len(self.development_data), len(self.test_data)))
 #     print("%d documents" % len(text_classifier.data.filenames), file=print_file)
 #     print("%d categories" % len(text_classifier.data.target_names), file=print_file)
 #     print("%d groups" % len(text_classifier.train_test_splitter), file=print_file)
 #     print(text_classifier.train_test_splitter, file=print_file)
 #     print(file=print_file)
+#
+#     sys.stdout.flush()
+#     print_file.close()
 #
 #     if os.path.isdir(file_path):
 #         dirs = [os.path.join(file_path, o) for o in os.listdir(file_path) if
@@ -537,12 +584,12 @@ def pipeline_and_parameters2(text_classifier, search_scoring, result_scorings, f
 #             #                             ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro']
 #             scorings = ['f1_weighted']
 #
-#
 #         # Apply pipeline and parameters:
 #         for scoring in scorings:
-#             pipeline_and_parameters(text_classifier, scoring, [result_scoring for result_scoring in scorings if result_scoring is not scoring], text_classifier.development_filenames, file_path)
+#             pipeline_and_parameters2(text_classifier, scoring,
+#                                      [result_scoring for result_scoring in scorings if result_scoring is not scoring],
+#                                      text_classifier.development_filenames, file_path)
 #             text_classifier.train_and_predict()
-#
 #
 # ########################################################################################################################
 # ########################################################################################################################
