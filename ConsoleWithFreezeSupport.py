@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------
 # ConsoleWithFreezeSupport.py
-#   This is a copy of the original file belowing to cx_Freeze,
+#   This is a copy of the original file belonging to cx_Freeze,
 #   with multiprocessing.freeze_support() added!
 #------------------------------------------------------------------------------
 
