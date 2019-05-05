@@ -48,6 +48,19 @@ class TextClassifier:
         self.language = language
         self.status_report_queue = status_report_queue
 
+        self.pipeline = None
+        self.parameters = None
+        self.do_stemming = None
+        self.scoring = None
+        self.result_scorings = None
+        self.current_output_file_path = None
+        self.development_data = None
+        self.development_target = None
+        self.development_filenames = None
+        self.test_data = None
+        self.test_target = None
+        self.grid_search = None
+
         # Display progress logs on stdout
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
@@ -238,8 +251,8 @@ class TextClassifier:
             file=print_file)
         print("The scores for the final model are computed on the full test set.", file=print_file)
         print(file=print_file)
-        y_pred = self.grid_search.predict(self.test_data)
-        print(classification_report(self.test_target, y_pred, target_names=self.data.target_names), file=print_file)
+        y_predict = self.grid_search.predict(self.test_data)
+        print(classification_report(self.test_target, y_predict, target_names=self.data.target_names), file=print_file)
         print(file=print_file)
         print(file=print_file)
 
@@ -247,23 +260,23 @@ class TextClassifier:
             # Print the performance score of the final model:
             # For binary classification use:
             print("Performance metrics final model on test set:", file=print_file)
-            print("Accuracy:", metrics.accuracy_score(self.test_target, y_pred), file=print_file)
-            print("Recall:", metrics.recall_score(self.test_target, y_pred), file=print_file)
-            print("Precision:", metrics.precision_score(self.test_target, y_pred), file=print_file)
-            print("F1:", metrics.f1_score(self.test_target, y_pred), file=print_file)
+            print("Accuracy:", metrics.accuracy_score(self.test_target, y_predict), file=print_file)
+            print("Recall:", metrics.recall_score(self.test_target, y_predict), file=print_file)
+            print("Precision:", metrics.precision_score(self.test_target, y_predict), file=print_file)
+            print("F1:", metrics.f1_score(self.test_target, y_predict), file=print_file)
             print(file=print_file)
             print(file=print_file)
         else:
             # For multiclass classification use:
             print("Performance metrics final model on test data:", file=print_file)
-            print("Accuracy:", metrics.accuracy_score(self.test_target, y_pred), file=print_file)
+            print("Accuracy:", metrics.accuracy_score(self.test_target, y_predict), file=print_file)
             print("Weighted Recall:",
-                  metrics.recall_score(self.test_target, y_pred, average='weighted', pos_label=None),
+                  metrics.recall_score(self.test_target, y_predict, average='weighted', pos_label=None),
                   file=print_file)  # Or average='micro' / average='macro'
             print("Weighted Precision:",
-                  metrics.precision_score(self.test_target, y_pred, average='weighted', pos_label=None),
+                  metrics.precision_score(self.test_target, y_predict, average='weighted', pos_label=None),
                   file=print_file)  # Or average='micro' / average='macro'
-            print("Weighted F1:", metrics.f1_score(self.test_target, y_pred, average='weighted', pos_label=None),
+            print("Weighted F1:", metrics.f1_score(self.test_target, y_predict, average='weighted', pos_label=None),
                   file=print_file)  # Or average='micro' / average='macro'
             print(file=print_file)
             print(file=print_file)
@@ -281,7 +294,7 @@ class TextClassifier:
         plt.ioff()
 
         # Print the confusion matrix for the final model:
-        cm = confusion_matrix(self.test_target, y_pred)
+        cm = confusion_matrix(self.test_target, y_predict)
         np.set_printoptions(precision=2)
         print('Confusion matrix final model', file=print_file)
         print(cm, file=print_file)
@@ -322,16 +335,16 @@ class TextClassifier:
     def print_most_informative(self, X, y, filenames, categories, print_file, n):
         vectorizer = self.grid_search.best_estimator_.named_steps['union'].transformer_list[0][1].named_steps['vect']
         tfidf = self.grid_search.best_estimator_.named_steps['union'].transformer_list[0][1].named_steps['tfidf']
-        chi2 = self.grid_search.best_estimator_.named_steps['chi2']
+        chi2_step = self.grid_search.best_estimator_.named_steps['chi2']
 
         vectorizer_fit = vectorizer.fit_transform([text['text'] for text in X])
         tfidf_fit = tfidf.fit_transform(vectorizer_fit)
-        chi2.fit(tfidf_fit, y)
+        chi2_step.fit(tfidf_fit, y)
 
-        chi2_values = chi2.scores_.tolist()
-        p_values = chi2.pvalues_.tolist()
+        chi2_values = chi2_step.scores_.tolist()
+        p_values = chi2_step.pvalues_.tolist()
 
-        X_array = vectorizer_fit.toarray()
+        x_array = vectorizer_fit.toarray()
         feature_names = vectorizer.get_feature_names()
 
         sorted_chi2_values = sorted(chi2_values)
@@ -356,7 +369,7 @@ class TextClassifier:
                 for category in categories:
                     count[category] = {}
 
-                for id_for_file, words_in_file in enumerate(X_array):
+                for id_for_file, words_in_file in enumerate(x_array):
                     for category in categories:
                         if category in filenames[id_for_file]:
                             if feature_names[feature_index] in count[category]:
@@ -373,7 +386,7 @@ class TextClassifier:
                     else:
                         temp_count = 0
 
-                    row += '  |  %6d' % (temp_count)
+                    row += '  |  %6d' % temp_count
 
                 print(row, file=print_file)
                 i += 1
@@ -396,8 +409,8 @@ class TextClassifier:
         text_step = self.grid_search.best_estimator_.named_steps['text']
         text_step_result = text_step.fit_transform(X, y)
 
-        chi2 = self.grid_search.best_estimator_.named_steps['chi2']
-        chi2.fit(text_step_result, y)
+        chi2_step = self.grid_search.best_estimator_.named_steps['chi2']
+        chi2_step.fit(text_step_result, y)
 
         # selector = self.grid_search.best_estimator_.named_steps['union'].transformer_list[0][1].named_steps['selector']
         # selector_result = selector.fit_transform(extractTextAndFeatures_result, y)
@@ -410,7 +423,7 @@ class TextClassifier:
 
         union_result_array = text_step_result.toarray()
 
-        sorted_chi2_values = np.sort(chi2.scores_)[::-1]  # sort and reverse
+        sorted_chi2_values = np.sort(chi2_step.scores_)[::-1]  # sort and reverse
         sorted_chi2_values = sorted_chi2_values[np.logical_not(np.isnan(sorted_chi2_values))]  # remove nan values
 
         # Printing
@@ -425,7 +438,7 @@ class TextClassifier:
         i = 0
         while i < sorted_chi2_values.__len__() and i < n:
             value_to_search = sorted_chi2_values[i]
-            feature_indexes = [i for i, x in enumerate(chi2.scores_) if x == value_to_search]
+            feature_indexes = [i for i, x in enumerate(chi2_step.scores_) if x == value_to_search]
 
             if feature_indexes.__len__ == 0:
                 print("No feature indexes found for value '" + value_to_search + "', trying the next one",
@@ -457,7 +470,7 @@ class TextClassifier:
                             feature_names[feature_index].replace('file__', '')]
 
                 row = '%25s  |  %2.4f  |  %1.3f' % (
-                    feature_names[feature_index], chi2.scores_[feature_index], chi2.pvalues_[feature_index])
+                    feature_names[feature_index], chi2_step.scores_[feature_index], chi2_step.pvalues_[feature_index])
 
                 for category in categories:
                     if feature_names[feature_index] in count[category]:
@@ -466,9 +479,9 @@ class TextClassifier:
                         temp_count = 0
 
                     if feature_names[feature_index].startswith('text__'):
-                        row += '  |  %9d' % (temp_count)
+                        row += '  |  %9d' % temp_count
                     else:
-                        row += '  |  %9.2f' % (temp_count)
+                        row += '  |  %9.2f' % temp_count
 
                 print(row, file=print_file)
                 i += 1
