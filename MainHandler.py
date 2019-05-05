@@ -8,17 +8,11 @@ from tornado.web import Application
 from user_interface.handlers import IndexHandler
 from user_interface.web_sockets import LoggingWebSocket, SettingsWebSocket
 
-webapp_path = os.path.join(os.path.dirname(__file__), "webapp")
-status_report_queue = multiprocessing.Queue()
-logging_web_socket = None
-logging_queue = tornado.queues.Queue()
-text_classification_process = None
-
 
 def make_app():
     webapp_settings = {
         "software_version": "0.2",
-        "data_files_path": r"C:\Users\Joost\Desktop\InterapyTest",
+        "data_files_path": r"C:\Users\Joost\Desktop\BrievenTest",
         "number_of_classes": -1,
         "classifier_running": False
     }
@@ -28,6 +22,8 @@ def make_app():
         "static_path": os.path.join(os.path.dirname(__file__), "static"),
         "debug": True
     }
+
+    status_report_queue = multiprocessing.Queue()
 
     return Application(
         [
@@ -46,4 +42,4 @@ if __name__ == "__main__":
     app = make_app()
     app.listen(8888)
     tornado.ioloop.IOLoop.current().start()
-    status_report_queue.close()
+    app.status_report_queue.close()

@@ -2,7 +2,7 @@
 var loggingWebSocket = new WebSocket("ws://localhost:8888/api/v1/logging");
 
 loggingWebSocket.onopen = function() {
-    loggingWebSocket.send("Hello, world");
+    // loggingWebSocket.send("Hello, world");
 };
 
 loggingWebSocket.onmessage = function (evt) {
