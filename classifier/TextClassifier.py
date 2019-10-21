@@ -29,11 +29,10 @@ import matplotlib.pyplot as plt
 import nltk
 import numpy as np
 from sklearn import metrics
-from sklearn.cross_validation import StratifiedKFold
 from sklearn.datasets import load_files, fetch_20newsgroups
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.feature_selection import chi2
-from sklearn.grid_search import GridSearchCV
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.pipeline import Pipeline
