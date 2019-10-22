@@ -15,13 +15,13 @@ by O. Grisel, P. Prettenhofer, and M. Blondel. This is open source code publishe
 Retrieved on 01-08-2016 from: http://scikit-learn.org/0.15/auto_examples/grid_search_text_feature_extraction.html
 '''
 
+import inspect
 import logging
 import os
 import pickle
 import sys
 import traceback
 from datetime import datetime
-from multiprocessing import freeze_support
 from pprint import PrettyPrinter
 from time import time
 
@@ -43,9 +43,12 @@ from feature_selection.SelectAtMostKBest import SelectAtMostKBest
 
 
 class TextClassifier:
-    def __init__(self, language, data_set_path, status_report_queue=None):
+    def __init__(self, language, data_files_path, n_splits, output_path, status_report_queue=None):
         self.language = language
         self.status_report_queue = status_report_queue
+        self.data_files_path = data_files_path
+        self.n_splits = n_splits
+        self.output_path = output_path
 
         self.pipeline = None
         self.parameters = None
@@ -63,36 +66,27 @@ class TextClassifier:
         # Display progress logs on stdout
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
-        if getattr(sys, 'frozen', False):
-            # frozen
-            current_path = os.path.dirname(sys.executable)
-        else:
-            # unfrozen
-            current_path = os.path.dirname(os.path.realpath(__file__))
-
-        output_path = os.path.join(current_path, 'output', '')
-
-        # Create output directory if it does not exist yet
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
-
         output_file = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '_0.txt'
         self.full_output_file_path = os.path.join(output_path, output_file)
 
         # self.groups = []
         self.group_number = -1
 
+        self.load_data()
+
+    def load_data(self):
         self.report_status('Loading data ...')
 
         # Only used when 20 Newsgroup test set is defined as input dataset
-        if data_set_path == 'fetch_20newsgroups':
+        if self.data_files_path == 'fetch_20newsgroups':
             self.data = fetch_20newsgroups(
                 categories=['alt.atheism', 'comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware',
                             'comp.sys.mac.hardware', 'comp.windows.x', 'misc.forsale'],
                 remove=('headers', 'footers', 'quotes'))  # Use 3 of the 20 Newsgroups categories
         else:
             # Use 'utf-8-sig' for files with BOM
-            self.data = load_files(data_set_path, encoding='utf-8')  # The path to and encoding of the input dataset
+            self.data = load_files(self.data_files_path,
+                                   encoding='utf-8')  # The path to and encoding of the input dataset
 
             # for full_file_path in self.data.filenames:
             '''
@@ -103,12 +97,15 @@ class TextClassifier:
             '''
 
         # self.train_test_splitter = LeaveOneLabelOut(self.groups)
-        self.train_test_splitter = StratifiedKFold(y=self.data.target, n_folds=5)
         # self.train_test_splitter = LabelKFold(labels=self.groups,  n_folds=5)
+        # self.train_test_splitter = StratifiedKFold(y=self.data.target, n_folds=5)
+        self.train_test_splitter = StratifiedKFold(n_splits=self.n_splits)
+        self.train_test_splitter.get_n_splits(X=self.data.data, y=self.data.target)
+
         self.development_data_indexes = []
         self.test_data_indexes = []
 
-        for development_indexes, test_indexes in self.train_test_splitter:
+        for development_indexes, test_indexes in self.train_test_splitter.split(X=self.data.data, y=self.data.target):
             self.development_data_indexes.append(development_indexes)
             self.test_data_indexes.append(test_indexes)
 
@@ -129,12 +126,12 @@ class TextClassifier:
         self.result_scorings = result_scorings
 
     def get_groups_counter(self):
-        return len(self.train_test_splitter)
+        return self.train_test_splitter.get_n_splits(X=self.data.data, y=self.data.target)
 
     def set_next_group_data(self, group_number):
         self.group_number = group_number
         self.current_output_file_path = self.full_output_file_path.replace('_0.txt', '_' + str(group_number) + '.txt')
-        print_file = open(self.current_output_file_path, 'a')
+        print_file = open(self.current_output_file_path, mode='a', encoding='utf-8')
 
         self.development_data = np.array(self.data.data)[self.development_data_indexes[group_number]]
         self.development_target = np.array(self.data.target)[self.development_data_indexes[group_number]]
@@ -153,7 +150,7 @@ class TextClassifier:
         print_file.close()
 
     def train_and_predict(self):
-        print_file = open(self.current_output_file_path, 'a')
+        print_file = open(self.current_output_file_path, mode='a', encoding='utf-8')
 
         if not hasattr(self, 'pipeline'):
             debug_line = "No pipeline defined"
@@ -173,8 +170,9 @@ class TextClassifier:
                                         verbose=1,
                                         scoring=self.scoring,
                                         # cv=LabelKFold(labels=self.development_groups, n_folds=5),
-                                        cv=StratifiedKFold(y=self.development_target, n_folds=5),
-                                        refit=True)
+                                        cv=StratifiedKFold(n_splits=self.n_splits),
+                                        refit=True,
+                                        error_score='raise')
 
         print("Performing exhaustive grid search to find best parameter combination...", file=print_file)
         print("pipeline elements:", [name for name, _ in self.pipeline.steps], file=print_file)
@@ -236,8 +234,8 @@ class TextClassifier:
 
         print("Grid scores on development set:", file=print_file)
         print(file=print_file)
-        for params, mean_score, scores in self.grid_search.grid_scores_:
-            print("%0.3f (+/-%0.03f) for %r" % (mean_score, scores.std() * 2, params), file=print_file)
+        for key, value in self.grid_search.cv_results_.items():
+            print("%s: %s" % (key, value), file=print_file)
 
         sys.stdout.flush()
 
@@ -496,7 +494,7 @@ class TextClassifier:
 ########################################################################################################################
 
 # Definition Text classification pipeline and Parameter Grid
-def pipeline_and_parameters(text_classifier, search_scoring, result_scorings, file_names, cvs_files_path):
+def pipeline_and_parameters(text_classifier, search_scoring, result_scorings):
     text_classifier.set_pipeline(Pipeline([
         ('text', Pipeline([
             ('vect', CountVectorizer(tokenizer=CustomTokenizer(text_classifier.language, True), lowercase=True,
@@ -511,20 +509,25 @@ def pipeline_and_parameters(text_classifier, search_scoring, result_scorings, fi
     chi__k = list(range(10, 501, 20))  # Set parameter range + step size for Select K best features
     chi__k.append('all')
 
-    text_classifier.set_parameters({
-        'text__vect__min_df': [1, 2, 3],  # Number of training documents a term should occur in
-        'text__vect__ngram_range': [(1, 1), (2, 2), (3, 3), (1, 3)],
-        # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
-        'text__vect__stop_words': [nltk.corpus.stopwords.words(text_classifier.language), None],
-        # Do/do not remove stopwords
-        'text__tfidf__use_idf': [True, False],  # Weight terms by tf or tfidf
-        'chi2__k': chi__k,  # Select K most informative features
-        'clf__C': [1, 2, 3, 10, 100, 1000],  # Compare different values for C parameter
-        'clf__class_weight': ['balanced'],  # Weighted vs non-weighted classes
-    }, do_stemming=True, scoring=search_scoring, result_scorings=result_scorings)  # Stem keywords
+    text_classifier.set_parameters(
+        {
+            'text__vect__min_df': [1, 2, 3],  # Number of training documents a term should occur in
+            'text__vect__ngram_range': [(1, 1), (2, 2), (3, 3), (1, 3)],
+            # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
+            'text__vect__stop_words': [nltk.corpus.stopwords.words(text_classifier.language), None],
+            # Do/do not remove stopwords
+            'text__tfidf__use_idf': [True, False],  # Weight terms by tf or tfidf
+            'chi2__k': chi__k,  # Select K most informative features
+            'clf__C': [1, 2, 3, 10, 100, 1000],  # Compare different values for C parameter
+            'clf__class_weight': ['balanced'],  # Weighted vs non-weighted classes
+        },
+        do_stemming=True,
+        scoring=search_scoring,
+        result_scorings=result_scorings
+    )
 
 
-def pipeline_and_parameters2(text_classifier, search_scoring, result_scorings, file_names, cvs_files_path):
+def pipeline_and_parameters2(text_classifier, search_scoring, result_scorings):
     text_classifier.set_pipeline(Pipeline([
         ('text', Pipeline([
             ('vect', CountVectorizer(tokenizer=CustomTokenizer(text_classifier.language, True), lowercase=True,
@@ -539,70 +542,17 @@ def pipeline_and_parameters2(text_classifier, search_scoring, result_scorings, f
     chi__k = list(range(10, 10, 20))  # Set parameter range + step size for Select K best features
     chi__k.append('all')
 
-    text_classifier.set_parameters({
-        'text__vect__min_df': [1],  # Number of training documents a term should occur in
-        'text__vect__ngram_range': [(1, 1)],  # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
-        'text__vect__stop_words': [None],  # Do/do not remove stopwords
-        'text__tfidf__use_idf': [False],  # Weight terms by tf or tfidf
-        'chi2__k': chi__k,  # Select K most informative features
-        'clf__C': [1],  # Compare different values for C parameter
-        'clf__class_weight': [None],  # Weighted vs non-weighted classes
-    }, do_stemming=True, scoring=search_scoring, result_scorings=result_scorings)  # Stem keywords
-
-
-# if __name__ == "__main__":
-#     freeze_support()
-#
-#     # Set variable to language of dataset, e.g. 'dutch', 'english' or any other language supported by NLTK
-#     language = 'dutch'
-#
-#     # Set path to Main folder with dataset on your computer that contains the categorized subfolders (see README file for more information).
-#     # To test the script on the 20 Newsgroups dataset, use: file_path = 'fetch_20newsgroups'
-#     file_path = r'C:\Users\Sytske\Desktop\Ingrid\Dataset\CompleteThinking\Thinking'
-#     # file_path = 'fetch_20newsgroups'
-#
-#     # Create the classifier with the language and dataset:
-#     text_classifier = TextClassifier(language, file_path)
-#
-#     print_file = open(text_classifier.full_output_file_path, 'a')
-#     # print("%d documents (%d development, %d test)" % (len(self.data.filenames), len(self.development_data), len(self.test_data)))
-#     print("%d documents" % len(text_classifier.data.filenames), file=print_file)
-#     print("%d categories" % len(text_classifier.data.target_names), file=print_file)
-#     print("%d groups" % len(text_classifier.train_test_splitter), file=print_file)
-#     print(text_classifier.train_test_splitter, file=print_file)
-#     print(file=print_file)
-#
-#     sys.stdout.flush()
-#     print_file.close()
-#
-#     if os.path.isdir(file_path):
-#         dirs = [os.path.join(file_path, o) for o in os.listdir(file_path) if
-#                 os.path.isdir(os.path.join(file_path, o))]
-#         number_of_classes = dirs.__len__()
-#     else:
-#         number_of_classes = -1
-#
-#     number_of_groups = text_classifier.get_groups_counter()
-#
-#     for i in range(number_of_groups):
-#         text_classifier.set_next_group_data(i)
-#
-#         if number_of_classes == 2:
-#             # For binary classifiers: ['accuracy', 'precision', 'recall', 'f1']
-#             scorings = ['f1']
-#         else:
-#             # For multiclass classifiers: ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted'] or
-#             #                             ['accuracy', 'precision_micro', 'recall_micro', 'f1_micro'] or
-#             #                             ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro']
-#             scorings = ['f1_weighted']
-#
-#         # Apply pipeline and parameters:
-#         for scoring in scorings:
-#             pipeline_and_parameters2(text_classifier, scoring,
-#                                      [result_scoring for result_scoring in scorings if result_scoring is not scoring],
-#                                      text_classifier.development_filenames, file_path)
-#             text_classifier.train_and_predict()
-#
-# ########################################################################################################################
-# ########################################################################################################################
-# ########################################################################################################################
+    text_classifier.set_parameters(
+        {
+            'text__vect__min_df': [1],  # Number of training documents a term should occur in
+            'text__vect__ngram_range': [(1, 1)],  # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
+            'text__vect__stop_words': [None],  # Do/do not remove stopwords
+            'text__tfidf__use_idf': [False],  # Weight terms by tf or tfidf
+            'chi2__k': chi__k,  # Select K most informative features
+            'clf__C': [1],  # Compare different values for C parameter
+            'clf__class_weight': [None],  # Weighted vs non-weighted classes
+        },
+        do_stemming=True,
+        scoring=search_scoring,
+        result_scorings=result_scorings
+    )
