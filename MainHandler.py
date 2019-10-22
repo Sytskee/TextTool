@@ -1,3 +1,4 @@
+import inspect
 import multiprocessing
 import os
 
@@ -10,11 +11,20 @@ from user_interface.web_sockets import LoggingWebSocket, SettingsWebSocket
 
 
 def make_app():
+    current_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    output_path = os.path.join(current_path, 'output', '')
+
+    # Create output directory if it does not exist yet
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
     webapp_settings = {
         "software_version": "0.2",
-        "data_files_path": r"C:\Users\Joost\Desktop\BrievenTest",
         "number_of_classes": -1,
-        "classifier_running": False
+        "classifier_running": False,
+        "data_files_path": r"C:\Users\Joost\Desktop\JoostTest",
+        "n_splits": 3,
+        "output_path": output_path
     }
 
     settings = {
