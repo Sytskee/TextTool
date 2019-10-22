@@ -1,10 +1,16 @@
 import sys
+
 from datetime import datetime
 from io import StringIO
 from json import load, dumps
 from multiprocessing import Process
 from os import path, listdir
+from typing import Any
 
+import tornado.web
+from tornado import httputil
+
+from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 
 from classifier.TextClassifier import TextClassifier
@@ -18,7 +24,13 @@ def start_text_classifier(webapp_settings, status_report_queue):
 
     try:
         # Create the classifier with the language and dataset:
-        text_classifier = TextClassifier(language, webapp_settings["data_files_path"], status_report_queue)
+        text_classifier = TextClassifier(
+            language,
+            webapp_settings["data_files_path"],
+            webapp_settings["n_splits"],
+            webapp_settings["output_path"],
+            status_report_queue)
+
         number_of_groups = text_classifier.get_groups_counter()
 
         for i in range(number_of_groups):
@@ -40,12 +52,10 @@ def start_text_classifier(webapp_settings, status_report_queue):
 
             # Apply pipeline and parameters:
             for scoring in scorings:
-                pipeline_and_parameters(text_classifier,
-                                        scoring,
-                                        [result_scoring for result_scoring in scorings if
-                                         result_scoring is not scoring],
-                                        text_classifier.development_filenames,
-                                        webapp_settings["data_files_path"])
+                pipeline_and_parameters(
+                    text_classifier,
+                    scoring,
+                    [result_scoring for result_scoring in scorings if result_scoring is not scoring])
 
                 fold_process = Process(target=text_classifier.train_and_predict)
                 fold_process.start()
@@ -61,20 +71,24 @@ def start_text_classifier(webapp_settings, status_report_queue):
     # All done
     status_report_queue.put('{}: All done!'.format(datetime.now().strftime('%H:%M:%S')))
 
+    webapp_settings["classifier_running"] = False
+    SettingsWebSocket.write_settings_to_clients()
+
     if error is not None:
         raise error
 
 
 class SettingsWebSocket(WebSocketHandler):
-    __clients__ = []
+    __io_loops__ = dict()
 
     def initialize(self, webapp_settings, status_report_queue):
         self.webapp_settings = webapp_settings
         self.status_report_queue = status_report_queue
+
         self.text_classification_process = None
 
     def open(self):
-        SettingsWebSocket.__clients__.append(self)
+        SettingsWebSocket.__io_loops__[self] = IOLoop.current()
         self.write_message(dumps(self.webapp_settings))
 
     def on_message(self, message):
@@ -87,10 +101,10 @@ class SettingsWebSocket(WebSocketHandler):
 
                 if key == "classifier_running":
                     if value:
-                        self.text_classification_process =\
-                            Process(target=start_text_classifier,
-                                    args=(self.webapp_settings, self.status_report_queue,),
-                                    name="Text-Classifier")
+                        self.text_classification_process = Process(
+                            target=start_text_classifier,
+                            args=(self.webapp_settings, self.status_report_queue,),
+                            name="Text-Classifier")
                         self.text_classification_process.start()
                     else:
                         self.status_report_queue.put("Stop")
@@ -120,10 +134,10 @@ class SettingsWebSocket(WebSocketHandler):
         pass
 
     def on_close(self):
-        SettingsWebSocket.__clients__.remove(self)
+        SettingsWebSocket.__io_loops__.pop(self, None)
 
     @classmethod
     def write_settings_to_clients(cls):
-        print("write_settings_to_clients: " + str(cls.__clients__.__len__()))
-        for client in cls.__clients__:
-            client.write_message(client.webapp_settings)
+        print("write_settings_to_clients: " + str(cls.__io_loops__.__len__()))
+        for client, io_loop in cls.__io_loops__.items():
+            io_loop.add_callback(client.write_message, dumps(client.webapp_settings))
