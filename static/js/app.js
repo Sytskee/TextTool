@@ -19,10 +19,11 @@ settingsWebSocket.onmessage = function (evt) {
     $("#webapp_settings").data(settings);
     $("#webapp_settings").text(evt.data);
 
-    handleStartStopClick(null);
+    setStartStopButton($("#webapp_settings").data("classifier_running"));
 };
 
 $("a#start_stop").click(handleStartStopClick)
+
 function handleStartStopClick(event) {
     var classifier_running = $("#webapp_settings").data("classifier_running");
 
@@ -32,7 +33,9 @@ function handleStartStopClick(event) {
         $("#webapp_settings").data("classifier_running", classifier_running);
         settingsWebSocket.send(JSON.stringify({"classifier_running": classifier_running}));
     }
+}
 
+function setStartStopButton(classifier_running) {
     if (classifier_running) {
         $("a#start_stop").addClass("btn-danger");
         //$("a#start_stop").removeClass("btn-outline-light");
