@@ -1,11 +1,15 @@
 // Socket for streaming the log messages during execution
 var loggingWebSocket = new WebSocket("ws://localhost:8888/api/v1/logging");
 
-loggingWebSocket.onopen = function() {
-    // loggingWebSocket.send("Hello, world");
+loggingWebSocket.onopen = function(event) {
+    $("a#start_stop").removeClass("disabled");
 };
 
-loggingWebSocket.onmessage = function(evt) {
+loggingWebSocket.onclose = function(event) {
+    $("a#start_stop").addClass("disabled");
+};
+
+loggingWebSocket.onmessage = function(event) {
     var loggingTextArea = $("#logging");
     loggingTextArea.append(evt.data);
     loggingTextArea.scrollTop(loggingTextArea[0].scrollHeight)
@@ -14,10 +18,10 @@ loggingWebSocket.onmessage = function(evt) {
 // Socket for sending and receiving settings
 var settingsWebSocket = new WebSocket("ws://localhost:8888/api/v1/settings");
 
-settingsWebSocket.onmessage = function (evt) {
-    var settings = JSON.parse(evt.data);
+settingsWebSocket.onmessage = function (event) {
+    var settings = JSON.parse(event.data);
     $("#webapp_settings").data(settings);
-    $("#webapp_settings").text(evt.data);
+    $("#webapp_settings").text(event.data);
 
     setStartStopButton($("#webapp_settings").data("classifier_running"));
 };
@@ -38,7 +42,6 @@ function handleStartStopClick(event) {
 function setStartStopButton(classifier_running) {
     if (classifier_running) {
         $("a#start_stop").addClass("btn-danger");
-        //$("a#start_stop").removeClass("btn-outline-light");
         $("a#start_stop").removeClass("btn-success");
         $("a#start_stop").html('<i class="fas fa-stop mr-2"></i>Stop')
     }
