@@ -6,9 +6,10 @@ import tornado.ioloop
 import tornado.queues
 
 from tornado.web import Application
-from user_interface.handlers import IndexHandler
-from user_interface.web_sockets import LoggingWebSocket, SettingsWebSocket
-
+from user_interface.handlers.IndexHandler import IndexHandler
+from user_interface.handlers.AppSettingsHandler import AppSettingsHandler
+from user_interface.web_sockets.LoggingWebSocket import LoggingWebSocket
+from user_interface.web_sockets.SettingsWebSocket import SettingsWebSocket
 
 def make_app():
     current_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -18,14 +19,9 @@ def make_app():
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    webapp_settings = {
-        "software_version": "0.2",
-        "number_of_classes": -1,
-        "classifier_running": False,
-        "data_files_path": r"C:\Users\Joost\Desktop\JoostTest",
-        "n_splits": 3,
-        "output_path": output_path
-    }
+    AppSettingsHandler(output_path)
+
+    status_report_queue = multiprocessing.Queue()
 
     settings = {
         "template_path": os.path.join(os.path.dirname(__file__), "templates"),
@@ -33,16 +29,12 @@ def make_app():
         "debug": True
     }
 
-    status_report_queue = multiprocessing.Queue()
-
     return Application(
         [
-            (r"/", IndexHandler.IndexHandler, dict(webapp_settings=webapp_settings)),
-            (r"/index", IndexHandler.IndexHandler, dict(webapp_settings=webapp_settings)),
-            (r"/api/v1/logging", LoggingWebSocket.LoggingWebSocket,
-             dict(webapp_settings=webapp_settings, status_report_queue=status_report_queue)),
-            (r"/api/v1/settings", SettingsWebSocket.SettingsWebSocket,
-             dict(webapp_settings=webapp_settings, status_report_queue=status_report_queue))
+            (r"/", IndexHandler),
+            (r"/index", IndexHandler),
+            (r"/api/v1/logging", LoggingWebSocket, dict(status_report_queue=status_report_queue)),
+            (r"/api/v1/settings", SettingsWebSocket, dict(status_report_queue=status_report_queue))
         ],
         **settings
     )

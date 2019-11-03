@@ -15,6 +15,7 @@ from tornado.websocket import WebSocketHandler
 
 from classifier.TextClassifier import TextClassifier
 from classifier.TextClassifier import pipeline_and_parameters2 as pipeline_and_parameters
+from user_interface.handlers.AppSettingsHandler import AppSettingsHandler
 
 
 def start_text_classifier(webapp_settings, status_report_queue):
@@ -71,39 +72,41 @@ def start_text_classifier(webapp_settings, status_report_queue):
     # All done
     status_report_queue.put('{}: All done!'.format(datetime.now().strftime('%H:%M:%S')))
 
-    webapp_settings["classifier_running"] = False
-    SettingsWebSocket.write_settings_to_clients()
-
     if error is not None:
         raise error
 
 
 class SettingsWebSocket(WebSocketHandler):
-    __io_loops__ = dict()
-
-    def initialize(self, webapp_settings, status_report_queue):
-        self.webapp_settings = webapp_settings
+    def initialize(self, status_report_queue):
         self.status_report_queue = status_report_queue
 
         self.text_classification_process = None
 
+        self.__app_settings_handler = AppSettingsHandler()
+        self.__app_settings_handler.register_onchange(self.setting_changed)
+        self.__app_settings_handler.set('io_loops', dict())
+
+    @staticmethod
+    def setting_changed(key, old_value, new_value):
+        SettingsWebSocket.write_settings_to_clients()
+
     def open(self):
-        SettingsWebSocket.__io_loops__[self] = IOLoop.current()
-        self.write_message(dumps(self.webapp_settings))
+        self.__app_settings_handler.get('io_loops')[self] = IOLoop.current()
+        self.write_message(dumps(self.__app_settings_handler.get_app_settings()))
 
     def on_message(self, message):
         message_io = StringIO(message)
         changed_setting = load(message_io)
 
         for key, value in changed_setting.items():
-            if self.webapp_settings[key] != value:
-                self.webapp_settings[key] = value
+            if self.__app_settings_handler.get_app_settings()[key] != value:
+                self.__app_settings_handler.set(key, value)
 
                 if key == "classifier_running":
                     if value:
                         self.text_classification_process = Process(
                             target=start_text_classifier,
-                            args=(self.webapp_settings, self.status_report_queue,),
+                            args=(self.__app_settings_handler.get_app_settings(), self.status_report_queue,),
                             name="Text-Classifier")
                         self.text_classification_process.start()
                     else:
@@ -116,28 +119,29 @@ class SettingsWebSocket(WebSocketHandler):
 
                             self.text_classification_process = None
 
-                        self.webapp_settings["classifier_running"] = False
-                        SettingsWebSocket.write_settings_to_clients()
+                        self.__app_settings_handler.set("classifier_running", False)
                 elif key == "data_files_path":
                     if path.isdir(value):
                         dirs = [path.join(value, o) for o in
                                 listdir(value) if
                                 path.isdir(path.join(value, o))]
-                        self.webapp_settings["number_of_classes"] = dirs.__len__()
+                        self.__app_settings_handler.set("number_of_classes", dirs.__len__())
                     else:
-                        self.webapp_settings["number_of_classes"] = -1
+                        self.__app_settings_handler.set("number_of_classes", -1)
                         self.status_report_queue.put("Not a valid directory selected")
 
-        self.write_message(self.webapp_settings)
+        self.write_message(self.__app_settings_handler.get_app_settings())
 
     def data_received(self, chunk):
         pass
 
     def on_close(self):
-        SettingsWebSocket.__io_loops__.pop(self, None)
+        self.__app_settings_handler.get('io_loops').pop(self, None)
 
     @classmethod
     def write_settings_to_clients(cls):
-        print("write_settings_to_clients: " + str(cls.__io_loops__.__len__()))
-        for client, io_loop in cls.__io_loops__.items():
-            io_loop.add_callback(client.write_message, dumps(client.webapp_settings))
+        app_settings_handler = AppSettingsHandler()
+
+        print("write_settings_to_clients: " + str(app_settings_handler.get('io_loops').__len__()))
+        for client, io_loop in app_settings_handler.get('io_loops').items():
+            io_loop.add_callback(client.write_message, dumps(app_settings_handler.get_app_settings()))

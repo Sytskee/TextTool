@@ -8,16 +8,19 @@ from tornado import httputil
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 
+from user_interface.handlers.AppSettingsHandler import AppSettingsHandler
+
 
 class LoggingWebSocket(WebSocketHandler):
-    def initialize(self, webapp_settings, status_report_queue):
-        self.webapp_settings = webapp_settings
+    def initialize(self, status_report_queue):
         self.status_report_queue = status_report_queue
 
         self.io_loop = IOLoop.current()
 
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.executor.submit(self.get_logging)
+
+        self.__app_settings_handler = AppSettingsHandler()
 
     def on_message(self, message):
         self.write_message(u"You said: " + message + "\r\n")
@@ -37,3 +40,7 @@ class LoggingWebSocket(WebSocketHandler):
 
     def publish(self, message):
         self.write_message(message + "\r\n")
+
+        '''TODO: must be done in a proper way'''
+        if message.endswith('All done!'):
+            self.__app_settings_handler.set("classifier_running", False)
