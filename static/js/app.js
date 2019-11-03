@@ -11,7 +11,7 @@ loggingWebSocket.onclose = function(event) {
 
 loggingWebSocket.onmessage = function(event) {
     var loggingTextArea = $("#logging");
-    loggingTextArea.append(evt.data);
+    loggingTextArea.val(loggingTextArea.val() + event.data)
     loggingTextArea.scrollTop(loggingTextArea[0].scrollHeight)
 };
 
@@ -44,10 +44,11 @@ function setStartStopButton(classifier_running) {
         $("a#start_stop").addClass("btn-danger");
         $("a#start_stop").removeClass("btn-success");
         $("a#start_stop").html('<i class="fas fa-stop mr-2"></i>Stop')
+
+        $("#logging").val('')
     }
     else {
         $("a#start_stop").removeClass("btn-danger");
-        //$("a#start_stop").addClass("btn-outline-light");
         $("a#start_stop").addClass("btn-success");
         $("a#start_stop").html('<i class="fas fa-play mr-2"></i>Start')
     }
