@@ -11,8 +11,8 @@ loggingWebSocket.onclose = function(event) {
 
 loggingWebSocket.onmessage = function(event) {
     var loggingTextArea = $("#logging");
-    loggingTextArea.val(loggingTextArea.val() + event.data)
-    loggingTextArea.scrollTop(loggingTextArea[0].scrollHeight)
+    loggingTextArea.val(loggingTextArea.val() + event.data);
+    loggingTextArea.scrollTop(loggingTextArea[0].scrollHeight);
 };
 
 // Socket for sending and receiving settings
@@ -25,88 +25,122 @@ settingsWebSocket.onmessage = function (event) {
     $("#webapp_settings").data(settings);
     $("#webapp_settings").text(event.data);
 
-    Object.keys(settings).forEach(function(key) {
-        var input = $("input#" + key)
-        if (input.attr("type") == "checkbox") {
-            input.prop("checked", settings[key])
-        } else {
-            input.val(settings[key])
-        }
-    })
+    setInputs(settings);
 
     setStartStopButton($("#webapp_settings").data("classifier_running"));
 };
 
-$("a#start_stop").click(handleStartStopClick)
+function setInputs(keyValues) {
+    Object.keys(keyValues).forEach(function(key) {
+        var input = $("input#" + key);
+        if (input.attr("type") == "checkbox") {
+            input.prop("checked", keyValues[key]);
+        } else {
+            input.val(keyValues[key]);
+        }
+    });
+}
+
+$("a#start_stop").click(handleStartStopClick);
 
 function handleStartStopClick(event) {
     var classifier_running = $("#webapp_settings").data("classifier_running");
 
     if (event != null) {
         // Triggered by button click
-        classifier_running = !classifier_running
+        classifier_running = !classifier_running;
         $("#webapp_settings").data("classifier_running", classifier_running);
         settingsWebSocket.send(JSON.stringify({"classifier_running": classifier_running}));
     }
 }
 
 function setStartStopButton(classifier_running) {
-    var start_stop = $("a#start_stop")
+    var start_stop = $("a#start_stop");
 
     if (classifier_running) {
         start_stop
             .addClass("btn-danger")
-            .removeClass("btn-success")
+            .removeClass("btn-success");
         start_stop.children("i")
             .addClass("fa-stop")
-            .removeClass("fa-play")
+            .removeClass("fa-play");
 
-        start_stop.children("span").text("Stop")
+        start_stop.children("span").text("Stop");
         //start_stop.html("<i class='fas fa-stop mr-2'></i>Stop")
 
-        $("#logging").val("")
+        $("#logging").val("");
     }
     else {
         start_stop
             .addClass("btn-success")
-            .removeClass("btn-danger")
+            .removeClass("btn-danger");
         start_stop.children("i")
             .addClass("fa-play")
-            .removeClass("fa-stop")
+            .removeClass("fa-stop");
 
-        start_stop.children("span").text("Start")
-        //start_stop.html("<i class="fas fa-play mr-2"></i>Start")
+        start_stop.children("span").text("Start");
     }
 }
 
-$(document).ready(function() {
-    $("#container_id").fileTree({ root: "/some/folder/" }, function(file) {
-        alert(file);
-    });
+$("div.portfolio-modal input").change(function() {
+    updateModelButtons($(this).closest("div.modal"));
 });
 
-$("div.portfolio-modal input").change(function() {
-    var dataChanged = false
+function updateModelButtons(modal) {
+    var dataChanged = false;
 
-    $("div.portfolio-modal input").each(function() {
+    modal.find("input").each(function() {
         if ($(this).attr("type") == "checkbox") {
-            var inputValue = $(this).prop("checked")
+            var inputValue = $(this).prop("checked");
         } else {
-            var inputValue = $(this).val()
+            var inputValue = $(this).val();
         }
 
-        var settings = JSON.parse(localStorage.getItem("settings"))
-        var settingsValue = settings[$(this).attr("id")]
+        var settings = JSON.parse(localStorage.getItem("settings"));
+        var settingsValue = settings[$(this).attr("id")];
 
         if (inputValue != settingsValue) {
-            dataChanged = true
-            return false // break 'each()' loop
+            dataChanged = true;
+            return false; // break 'each()' loop
         }
-    })
+    });
 
     if (dataChanged) {
-        $(this).closest("form").siblings("button.apply").removeClass("disabled");
+        modal.find("button.apply")
+            .removeClass("disabled")
+            .attr("disabled", false);
     } else {
-        $(this).closest("form").siblings("button.apply").addClass("disabled");
+        modal.find("button.apply")
+            .addClass("disabled")
+            .attr("disabled", true);
     }
-}); 
+}
+
+function saveSettings(event) {
+    var modal = $(event).closest("div.modal");
+    var changedSettings = {};
+
+    modal.find("input").each(function() {
+        if ($(this).attr("type") == "checkbox") {
+            var inputValue = $(this).prop("checked");
+        } else {
+            var inputValue = $(this).val();
+        }
+
+        var settings = JSON.parse(localStorage.getItem("settings"));
+        var settingsValue = settings[$(this).attr("id")];
+
+        if (inputValue != settingsValue) {
+            changedSettings[$(this).attr("id")] = inputValue;
+        }
+    });
+
+    if (! $.isEmptyObject(changedSettings)) {
+        settingsWebSocket.send(JSON.stringify(changedSettings));
+    }
+}
+
+function discardSettings(event) {
+    setInputs(JSON.parse(localStorage.getItem("settings")));
+    updateModelButtons($(event).closest("div.modal"));
+}
