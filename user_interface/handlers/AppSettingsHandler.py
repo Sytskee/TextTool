@@ -29,10 +29,11 @@ class AppSettingsHandler(metaclass=Singleton):
         return settings_copy
 
     def set(self, key, new_value):
-        old_value = self.__settings.get(key)
-        self.__settings[key] = new_value
+        if new_value != self.__settings.get(key):
+            old_value = self.__settings.get(key)
+            self.__settings[key] = new_value
 
-        self.__notify(key, old_value, new_value)
+            self.__notify(key, old_value, new_value)
 
     def get(self, key):
         return self.__settings.get(key)
