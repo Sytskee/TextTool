@@ -1,8 +1,12 @@
+import os
+
 from util.Singleton import Singleton
 
 
 class AppSettingsHandler(metaclass=Singleton):
-    def __init__(self, output_path):
+    def __init__(self, current_path):
+        output_path = os.path.join(current_path, 'output', '')
+
         self.__settings = {
             "software_version": "0.2",
             "number_of_classes": -1,

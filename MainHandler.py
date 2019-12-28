@@ -13,13 +13,7 @@ from user_interface.web_sockets.SettingsWebSocket import SettingsWebSocket
 
 def make_app():
     current_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    output_path = os.path.join(current_path, 'output', '')
-
-    # Create output directory if it does not exist yet
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-
-    AppSettingsHandler(output_path)
+    AppSettingsHandler(current_path)
 
     status_report_queue = multiprocessing.Queue()
 
