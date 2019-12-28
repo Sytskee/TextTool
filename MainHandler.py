@@ -13,9 +13,9 @@ from user_interface.web_sockets.SettingsWebSocket import SettingsWebSocket
 
 def make_app():
     current_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    AppSettingsHandler(current_path)
-
     status_report_queue = multiprocessing.Queue()
+
+    AppSettingsHandler(current_path, status_report_queue)
 
     settings = {
         "template_path": os.path.join(os.path.dirname(__file__), "templates"),

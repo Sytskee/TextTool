@@ -4,7 +4,6 @@ from datetime import datetime
 from io import StringIO
 from json import load, dumps
 from multiprocessing import Process
-from os import path, listdir
 from typing import Any
 
 import tornado.web
@@ -120,15 +119,6 @@ class SettingsWebSocket(WebSocketHandler):
                             self.text_classification_process = None
 
                         self.__app_settings_handler.set("classifier_running", False)
-                elif key == "data_files_path":
-                    if path.isdir(value):
-                        dirs = [path.join(value, o) for o in
-                                listdir(value) if
-                                path.isdir(path.join(value, o))]
-                        self.__app_settings_handler.set("number_of_classes", dirs.__len__())
-                    else:
-                        self.__app_settings_handler.set("number_of_classes", -1)
-                        self.status_report_queue.put("Not a valid directory selected")
 
         self.write_message(self.__app_settings_handler.get_app_settings())
 

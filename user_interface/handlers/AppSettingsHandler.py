@@ -1,22 +1,24 @@
 import os
 
+from os import path, listdir
 from util.Singleton import Singleton
 
 
 class AppSettingsHandler(metaclass=Singleton):
-    def __init__(self, current_path):
+    def __init__(self, current_path, status_report_queue):
         output_path = os.path.join(current_path, 'output', '')
 
-        self.__settings = {
-            "software_version": "0.2",
-            "number_of_classes": -1,
-            "classifier_running": False,
-            "data_files_path": r"C:\Users\Joost\Desktop\JoostTest",
-            "n_splits": 3,
-            "output_path": output_path
-        }
-
+        self.__status_report_queue = status_report_queue
+        self.__settings = dict()
         self.__onchange_listeners = list()
+
+        self.set("software_version", "0.2")
+        self.set("number_of_classes", -1)
+        self.set("n_splits", 3)
+        self.set("classifier_running", False)
+        self.set("output_path", output_path)
+
+        self.set("data_files_path", r"C:\Users\Joost\Desktop\JoostTest")
 
     def get_app_settings(self):
         """Get a copy of the current settings. Be aware that this is a copy, changes to the returned dictionary do not
@@ -33,6 +35,7 @@ class AppSettingsHandler(metaclass=Singleton):
             old_value = self.__settings.get(key)
             self.__settings[key] = new_value
 
+            self.__handle_special_cases(key, new_value)
             self.__notify(key, old_value, new_value)
 
     def get(self, key):
@@ -47,3 +50,14 @@ class AppSettingsHandler(metaclass=Singleton):
     def __notify(self, key, old_value, new_value):
         for listener in self.__onchange_listeners:
             listener(key, old_value, new_value)
+
+    def __handle_special_cases(self, key, new_value):
+        if key == "data_files_path":
+            if path.isdir(new_value):
+                dirs = [path.join(new_value, o) for o in
+                        listdir(new_value) if
+                        path.isdir(path.join(new_value, o))]
+                self.set("number_of_classes", dirs.__len__())
+            else:
+                self.set("number_of_classes", -1)
+                self.__status_report_queue.put("Not a valid directory selected")
