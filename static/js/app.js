@@ -41,8 +41,6 @@ function setInputs(keyValues) {
     });
 }
 
-$("a#start_stop").click(handleStartStopClick);
-
 function handleStartStopClick(event) {
     settings["classifier_running"] = !settings["classifier_running"]
     settingsWebSocket.send(JSON.stringify({"classifier_running": settings["classifier_running"]}));
