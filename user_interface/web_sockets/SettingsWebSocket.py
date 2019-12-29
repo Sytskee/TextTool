@@ -19,13 +19,12 @@ from user_interface.handlers.AppSettingsHandler import AppSettingsHandler
 
 def start_text_classifier(webapp_settings, status_report_queue):
     # Set variable to language of dataset, e.g. 'dutch', 'english' or any other language supported by NLTK
-    language = 'dutch'
     error = None
 
     try:
         # Create the classifier with the language and dataset:
         text_classifier = TextClassifier(
-            language,
+            webapp_settings["language"],
             webapp_settings["data_files_path"],
             webapp_settings["n_splits"],
             webapp_settings["output_path"],

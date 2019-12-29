@@ -28,6 +28,15 @@ settingsWebSocket.onmessage = function(event) {
     setInputs(settings);
     setStartStopButton(settings["classifier_running"]);
 
+    settings["language_options"].forEach(function(value, index) {
+        if (value == settings["language"]) {
+            var selected = " selected";
+        } else {
+            var selected = "";
+        }
+
+        $("select#language").append(`<option value="${value}"${selected}>${value}</option>`);
+    })
 };
 
 function setInputs(keyValues) {
@@ -74,22 +83,23 @@ function setStartStopButton(classifier_running) {
     }
 }
 
-$("div.portfolio-modal input").change(function() {
+$("#portfolioModal1 input, #portfolioModal1 select").change(function() {
     updateModelButtons($(this).closest("div.modal"));
 });
 
 function updateModelButtons(modal) {
     var dataChanged = false;
 
-    modal.find("input").each(function() {
-        if ($(this).attr("type") == "checkbox") {
-            var inputValue = $(this).prop("checked");
+    modal.find("input, select").each(function(index, element) {
+        element = $(element);
+
+        if (element.attr("type") == "checkbox") {
+            var inputValue = element.prop("checked");
         } else {
-            var inputValue = $(this).val();
+            var inputValue = element.val();
         }
 
-        var settings = JSON.parse(localStorage.getItem("settings"));
-        var settingsValue = settings[$(this).attr("id")];
+        var settingsValue = settings[element.attr("id")];
 
         if (inputValue != settingsValue) {
             dataChanged = true;
@@ -112,23 +122,33 @@ function saveSettings(event) {
     var modal = $(event).closest("div.modal");
     var changedSettings = {};
 
-    modal.find("input").each(function() {
-        if ($(this).attr("type") == "checkbox") {
-            var inputValue = $(this).prop("checked");
+    modal.find("input, select").each(function(index, element) {
+        element = $(element);
+
+        if (element.attr("type") == "checkbox") {
+            var inputValue = element.prop("checked");
+        } else if ($(this).attr("type") == "number") {
+            var inputValue = Number(element.val());
         } else {
-            var inputValue = $(this).val();
+            var inputValue = element.val();
         }
 
-        var settings = JSON.parse(localStorage.getItem("settings"));
-        var settingsValue = settings[$(this).attr("id")];
+        var settingsValue = settings[element.attr("id")];
 
         if (inputValue != settingsValue) {
-            changedSettings[$(this).attr("id")] = inputValue;
+            changedSettings[element.attr("id")] = inputValue;
+            settings[element.attr("id")] = inputValue;
         }
     });
 
     if (! $.isEmptyObject(changedSettings)) {
         settingsWebSocket.send(JSON.stringify(changedSettings));
+
+        if ($(event).data("dismiss") == "modal") {
+            modal.modal('hide'); // Hide manually because hide via 'data-dismiss' does not work after disabling button
+        }
+
+        updateModelButtons(modal);
     }
 }
 

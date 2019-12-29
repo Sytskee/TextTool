@@ -2,6 +2,7 @@ import os
 
 from os import path, listdir
 from util.Singleton import Singleton
+from nltk.corpus import stopwords
 
 
 class AppSettingsHandler(metaclass=Singleton):
@@ -15,8 +16,12 @@ class AppSettingsHandler(metaclass=Singleton):
         self.set("software_version", "0.2")
         self.set("number_of_classes", -1)
         self.set("n_splits", 3)
+        self.set("n_splits_min", 3)
+        self.set("n_splits_max", 10)
         self.set("classifier_running", False)
         self.set("output_path", output_path)
+        self.set("language_options", stopwords.fileids())
+        self.set("language", "english")
 
         self.set("data_files_path", r"C:\Users\Joost\Desktop\JoostTest")
 
