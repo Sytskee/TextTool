@@ -59,6 +59,7 @@ function setStartStopButton(classifier_running) {
 
         start_stop.children("span").text("Stop");
         $("#logging").val("");
+        $("div.modal").find("form").find(":input").attr("disabled", true);
     }
     else {
         start_stop
@@ -69,6 +70,7 @@ function setStartStopButton(classifier_running) {
             .removeClass("fa-stop");
 
         start_stop.children("span").text("Start");
+        $("div.modal").find("form").find(":input").attr("disabled", false);
     }
 }
 
