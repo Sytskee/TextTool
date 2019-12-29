@@ -1,6 +1,11 @@
 // Socket for streaming the log messages during execution
 var loggingWebSocket = new WebSocket("ws://localhost:8888/api/v1/logging");
 
+// Socket for sending and receiving settings
+var settingsWebSocket = new WebSocket("ws://localhost:8888/api/v1/settings");
+
+var settings = {}
+
 loggingWebSocket.onopen = function(event) {
     $("a#start_stop").removeClass("disabled");
 };
@@ -15,19 +20,14 @@ loggingWebSocket.onmessage = function(event) {
     loggingTextArea.scrollTop(loggingTextArea[0].scrollHeight);
 };
 
-// Socket for sending and receiving settings
-var settingsWebSocket = new WebSocket("ws://localhost:8888/api/v1/settings");
+settingsWebSocket.onmessage = function(event) {
+    settings = JSON.parse(event.data);
 
-settingsWebSocket.onmessage = function (event) {
-    var settings = JSON.parse(event.data);
-    localStorage.setItem('settings', event.data);
-
-    $("#webapp_settings").data(settings);
     $("#webapp_settings").text(event.data);
 
     setInputs(settings);
+    setStartStopButton(settings["classifier_running"]);
 
-    setStartStopButton($("#webapp_settings").data("classifier_running"));
 };
 
 function setInputs(keyValues) {
@@ -44,14 +44,8 @@ function setInputs(keyValues) {
 $("a#start_stop").click(handleStartStopClick);
 
 function handleStartStopClick(event) {
-    var classifier_running = $("#webapp_settings").data("classifier_running");
-
-    if (event != null) {
-        // Triggered by button click
-        classifier_running = !classifier_running;
-        $("#webapp_settings").data("classifier_running", classifier_running);
-        settingsWebSocket.send(JSON.stringify({"classifier_running": classifier_running}));
-    }
+    settings["classifier_running"] = !settings["classifier_running"]
+    settingsWebSocket.send(JSON.stringify({"classifier_running": settings["classifier_running"]}));
 }
 
 function setStartStopButton(classifier_running) {
@@ -66,8 +60,6 @@ function setStartStopButton(classifier_running) {
             .removeClass("fa-play");
 
         start_stop.children("span").text("Stop");
-        //start_stop.html("<i class='fas fa-stop mr-2'></i>Stop")
-
         $("#logging").val("");
     }
     else {
@@ -141,6 +133,6 @@ function saveSettings(event) {
 }
 
 function discardSettings(event) {
-    setInputs(JSON.parse(localStorage.getItem("settings")));
+    setInputs(settings);
     updateModelButtons($(event).closest("div.modal"));
 }
