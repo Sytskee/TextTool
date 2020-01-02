@@ -1,61 +1,43 @@
 import inspect
+import json
 import multiprocessing
 
 import tornado.ioloop
 import tornado.queues
 
-from configparser import ConfigParser
 from nltk.corpus import stopwords
 from pathlib import Path
 from tornado.web import Application
 from user_interface.handlers.IndexHandler import IndexHandler
-from user_interface.handlers.AppSettingsHandler import AppSettingsHandler
+from user_interface.handlers.SettingsHandler import SettingsHandler
 from user_interface.web_sockets.LoggingWebSocket import LoggingWebSocket
 from user_interface.web_sockets.SettingsWebSocket import SettingsWebSocket
 
 
-def create_fixed_config(config):
-    fixed_settings = "fixed"
-    config.set(fixed_settings, "software_version", "0.2")
+def merge_config(config_target, config_loaded):
+    for k, v in config_loaded.items():
+        if isinstance(v, dict) and k in config_target:
+            merge_config(config_target[k], config_loaded[k])
+        else:
+            config_target[k] = config_loaded[k]
 
 
-def set_default_text_classifier_settings(config):
-    text_classifier_settings = "TextClassifier"
-    config.set(text_classifier_settings, "text__vect__min_df",
-               [1, 2, 3]) # Number of training documents a term should occur in
-    config.set(text_classifier_settings, "text__vect__ngram_range",
-               [(1, 1), (2, 2), (3, 3), (1, 3)]) # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
-    config.set(text_classifier_settings, "text__vect__stop_words",
-               [stopwords.words(config.get(AppSettingsHandler.APP_SETTINGS, "language")), None])  # Do/do not remove stopwords
-    config.set(text_classifier_settings, "text__tfidf__use_idf", [True, False]) # Weight terms by tf or tfidf
-
-    chi2__k = list(range(10, 501, 20))  # Set parameter range + step size for Select K best features
-    chi2__k.append('all')
-
-    config.set(text_classifier_settings, "chi2__k", chi2__k) # Select K most informative features
-    config.set(text_classifier_settings, "clf__C", [1, 2, 3, 10, 100, 1000])  # Compare different values for C parameter
-    config.set(text_classifier_settings, "clf__class_weight", ["balanced"])  # Weighted vs non-weighted classes
-    config.set(text_classifier_settings, "do_stemming", True)
-    config.set(text_classifier_settings, "scoring", ['f1'])
-
-
-def make_app():
-    current_path = Path(Path.resolve(inspect.getfile(inspect.currentframe())).parent)
-    config_path = current_path.joinpath("config")
-    config_path.mkdir(parents=True, exist_ok=True)
-
+def make_app(config_local, current_path_local, config_file_path_local):
     status_report_queue = multiprocessing.Queue()
-    config = ConfigParser()
 
-    AppSettingsHandler(current_path, status_report_queue, config)
-    set_default_text_classifier_settings(config)
+    SettingsHandler(current_path_local, status_report_queue, config_local, config_file_path_local)
 
     # Read config after giving AppSettingsHandler the config to set the default values
-    config.read(config_path.joinpath("config.ini"))
+    with open(config_file_path, 'r') as configfile_local:
+        try:
+            loaded_config = json.load(configfile_local)
+            merge_config(config_local, loaded_config)
+        except ValueError as err:
+            status_report_queue.put("Loading of settings failed: {}".format(err))
 
     settings = {
-        "template_path": current_path.joinpath("templates"),
-        "static_path": current_path.joinpath("static"),
+        "template_path": current_path_local.joinpath("templates"),
+        "static_path": current_path_local.joinpath("static"),
         "debug": True
     }
 
@@ -71,7 +53,21 @@ def make_app():
 
 
 if __name__ == "__main__":
-    app = make_app()
+    current_path = Path(inspect.getfile(inspect.currentframe())).resolve().parent
+    config_path = current_path.joinpath("config")
+    config_path.mkdir(parents=True, exist_ok=True)
+
+    config_file_path = config_path.joinpath("config.ini")
+    if not config_file_path.is_file():
+        config_file_path.touch()
+
+    config = {}
+
+    app = make_app(config, current_path, config_file_path)
     app.listen(8888)
+
     tornado.ioloop.IOLoop.current().start()
+
     app.status_report_queue.close()
+
+    save_config()

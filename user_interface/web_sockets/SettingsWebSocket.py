@@ -14,20 +14,20 @@ from tornado.websocket import WebSocketHandler
 
 from classifier.TextClassifier import TextClassifier
 from classifier.TextClassifier import pipeline_and_parameters2 as pipeline_and_parameters
-from user_interface.handlers.AppSettingsHandler import AppSettingsHandler
+from user_interface.handlers.SettingsHandler import SettingsHandler
 
 
-def start_text_classifier(webapp_settings, status_report_queue):
+def start_text_classifier(settings, status_report_queue):
     # Set variable to language of dataset, e.g. 'dutch', 'english' or any other language supported by NLTK
     error = None
 
     try:
         # Create the classifier with the language and dataset:
         text_classifier = TextClassifier(
-            webapp_settings["language"],
-            webapp_settings["data_files_path"],
-            webapp_settings["n_splits"],
-            webapp_settings["output_path"],
+            settings[SettingsHandler.USER_SETTINGS]["language"],
+            settings[SettingsHandler.USER_SETTINGS]["data_files_path"],
+            settings[SettingsHandler.USER_SETTINGS]["n_splits"],
+            settings[SettingsHandler.USER_SETTINGS]["output_path"],
             status_report_queue)
 
         number_of_groups = text_classifier.get_groups_counter()
@@ -40,7 +40,7 @@ def start_text_classifier(webapp_settings, status_report_queue):
             text_classifier.set_next_group_data(i)
 
             # Different scoring metrics can be used:
-            if webapp_settings["number_of_classes"] == 2:
+            if settings[SettingsHandler.PROGRAM_SETTINGS]["number_of_classes"] == 2:
                 # For binary classifiers: ['accuracy', 'precision', 'recall', 'f1']
                 scorings = ['f1']
             else:
@@ -80,57 +80,62 @@ class SettingsWebSocket(WebSocketHandler):
 
         self.text_classification_process = None
 
-        self.__app_settings_handler = AppSettingsHandler()
+        self.__app_settings_handler = SettingsHandler()
         self.__app_settings_handler.register_onchange(self.setting_changed)
-        self.__app_settings_handler.set('io_loops', dict())
+        self.__app_settings_handler.set(SettingsHandler.INTERNAL_SETTINGS, 'io_loops', dict())
 
     @staticmethod
     def setting_changed(key, old_value, new_value):
         SettingsWebSocket.write_settings_to_clients()
 
     def open(self):
-        self.__app_settings_handler.get('io_loops')[self] = IOLoop.current()
-        self.write_message(dumps(self.__app_settings_handler.get_app_settings()))
+        self.__app_settings_handler.get(SettingsHandler.INTERNAL_SETTINGS, "io_loops")[self] = IOLoop.current()
+        self.write_message(dumps(self.__app_settings_handler.get_settings()))
 
     def on_message(self, message):
         message_io = StringIO(message)
         changed_setting = load(message_io)
 
-        for key, value in changed_setting.items():
-            if self.__app_settings_handler.get_app_settings()[key] != value:
-                self.__app_settings_handler.set(key, value)
+        settings = self.__app_settings_handler.get_settings()
 
-                if key == "classifier_running":
-                    if value:
-                        self.text_classification_process = Process(
-                            target=start_text_classifier,
-                            args=(self.__app_settings_handler.get_app_settings(), self.status_report_queue,),
-                            name="Text-Classifier")
-                        self.text_classification_process.start()
-                    else:
-                        self.status_report_queue.put("Stop")
+        for group, value_dict in changed_setting.items():
+            for key, value in value_dict.items():
+                if settings[group][key] != value:
+                    self.__app_settings_handler.set(group, key, value)
 
-                        if self.text_classification_process is not None:
-                            if self.text_classification_process.is_alive():
-                                self.text_classification_process.terminate()
-                                self.text_classification_process.join(timeout=1)
+                    if key == "classifier_running":
+                        if value:
+                            self.text_classification_process = Process(
+                                target=start_text_classifier,
+                                args=(settings, self.status_report_queue,),
+                                name="Text-Classifier")
+                            self.text_classification_process.start()
+                            self.__app_settings_handler.save_settings()
+                        else:
+                            self.status_report_queue.put("Stop")
 
-                            self.text_classification_process = None
+                            if self.text_classification_process is not None:
+                                if self.text_classification_process.is_alive():
+                                    self.text_classification_process.terminate()
+                                    self.text_classification_process.join(timeout=1)
 
-                        self.__app_settings_handler.set("classifier_running", False)
+                                self.text_classification_process = None
 
-        self.write_message(self.__app_settings_handler.get_app_settings())
+                            self.__app_settings_handler.set(SettingsHandler.PROGRAM_SETTINGS, "classifier_running", False)
+
+        self.write_message(settings)
 
     def data_received(self, chunk):
         pass
 
     def on_close(self):
-        self.__app_settings_handler.get('io_loops').pop(self, None)
+        self.__app_settings_handler.get(SettingsHandler.INTERNAL_SETTINGS, "io_loops").pop(self, None)
 
     @classmethod
     def write_settings_to_clients(cls):
-        app_settings_handler = AppSettingsHandler()
+        app_settings_handler = SettingsHandler()
+        io_loops = app_settings_handler.get(SettingsHandler.INTERNAL_SETTINGS, "io_loops")
 
-        print("write_settings_to_clients: " + str(app_settings_handler.get('io_loops').__len__()))
-        for client, io_loop in app_settings_handler.get('io_loops').items():
-            io_loop.add_callback(client.write_message, dumps(app_settings_handler.get_app_settings()))
+        print("write_settings_to_clients: " + str(io_loops.__len__()))
+        for client, io_loop in io_loops.items():
+            io_loop.add_callback(client.write_message, dumps(app_settings_handler.get_settings()))

@@ -1,6 +1,6 @@
 from tornado.web import RequestHandler
 
-from user_interface.handlers.AppSettingsHandler import AppSettingsHandler
+from user_interface.handlers.SettingsHandler import SettingsHandler
 
 
 class IndexHandler(RequestHandler):
@@ -8,4 +8,4 @@ class IndexHandler(RequestHandler):
         pass
 
     def get(self):
-        self.render("index.html", webapp_settings=AppSettingsHandler().get_app_settings())
+        self.render("index.html", webapp_settings=SettingsHandler().get_settings())
