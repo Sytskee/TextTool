@@ -1,6 +1,4 @@
-import os
-
-from os import path, listdir
+from pathlib import Path
 from util.Singleton import Singleton
 from nltk.corpus import stopwords
 
@@ -58,10 +56,10 @@ class AppSettingsHandler(metaclass=Singleton):
 
     def __handle_special_cases(self, key, new_value):
         if key == "data_files_path":
-            if path.isdir(new_value):
-                dirs = [path.join(new_value, o) for o in
-                        listdir(new_value) if
-                        path.isdir(path.join(new_value, o))]
+            new_files_path = Path(new_value)
+
+            if new_files_path.is_dir():
+                dirs = [x for x in new_files_path.iterdir() if x.is_dir()]
                 self.set("number_of_classes", dirs.__len__())
             else:
                 self.set("number_of_classes", -1)
