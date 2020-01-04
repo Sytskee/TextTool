@@ -118,11 +118,11 @@ function updateModelButtons(modal) {
     if (dataChanged) {
         modal.find("button.apply")
             .removeClass("disabled")
-            .attr("disabled", false);
+            .prop("disabled", false);
     } else {
         modal.find("button.apply")
             .addClass("disabled")
-            .attr("disabled", true);
+            .prop("disabled", true);
     }
 }
 
