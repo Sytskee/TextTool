@@ -48,11 +48,6 @@ class SettingsHandler(metaclass=Singleton):
 
     def save_settings(self):
         settings_copy = dict(self.__settings)
-        # settings_copy[SettingsHandler.APP_SETTINGS].pop("software_version")
-        # settings_copy[SettingsHandler.APP_SETTINGS].pop("io_loops")
-        # settings_copy[SettingsHandler.APP_SETTINGS].pop("language_options")
-        # settings_copy[SettingsHandler.APP_SETTINGS].pop("classifier_running")
-        # settings_copy[SettingsHandler.APP_SETTINGS].pop("number_of_classes")
         settings_copy.pop(SettingsHandler.PROGRAM_SETTINGS, None)
         settings_copy.pop(SettingsHandler.INTERNAL_SETTINGS, None)
 
