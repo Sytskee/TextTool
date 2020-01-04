@@ -91,7 +91,7 @@ function setStartStopButton(classifier_running) {
     }
 }
 
-$("#portfolioModal1 input, #portfolioModal1 select").change(function() {
+$("#portfolioTrain input, #portfolioTrain select").change(function() {
     updateModelButtons($(this).closest("div.modal"));
 });
 
