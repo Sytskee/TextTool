@@ -153,7 +153,7 @@
             <textarea id="logging" rows="10" disabled style="width: 100%"></textarea>
           </p>
           <p class="lead">
-            <a id="start_stop" class="btn btn-xl btn-success" onclick="handleStartStopClick(this);">
+            <a id="start_stop" class="btn btn-xl btn-success" onclick="handleStartStopClick(this);" data-settings-category="program">
               <i class="fas fa-play mr-2"></i>
               <span>Start</span>
             </a>
@@ -346,38 +346,38 @@
                   <div class="form-group row">
                     <label for="number_of_classes" class="col-sm-2 col-form-label">Number of classes</label>
                       <div class="col-sm-10">
-                        <input type="text" readonly class="form-control-plaintext" id="number_of_classes">
+                        <input type="text" readonly class="form-control-plaintext" id="number_of_classes" data-settings-category="program">
                       </div>
                   </div>
                   <div class="form-group row">
                     <label for="classifier_running" class="col-sm-2 col-form-label">Classifier running?</label>
                     <div class="col-sm-10 custom-control custom-switch">
-                      <input type="checkbox" readonly class="custom-control-input" id="classifier_running">
+                      <input type="checkbox" readonly class="custom-control-input" id="classifier_running" data-settings-category="program">
                       <label for="classifier_running" class="custom-control-label"></label>
                     </div>
                   </div>
                   <div class="form-group row">
                     <label for="data_files_path" class="col-sm-2 col-form-label">Data files</label>
                     <div class="col-sm-10">
-                      <input type="text" class="form-control-plaintext" id="data_files_path">
+                      <input type="text" class="form-control-plaintext" id="data_files_path" data-settings-category="user">
                     </div>
                   </div>
                   <div class="form-group row">
                     <label for="output_path" class="col-sm-2 col-form-label">Output path</label>
                     <div class="col-sm-10">
-                      <input type="text" class="form-control-plaintext" id="output_path">
+                      <input type="text" class="form-control-plaintext" id="output_path" data-settings-category="user">
                     </div>
                   </div>
                   <div class="form-group row">
                     <label for="n_splits" class="col-sm-2 col-form-label">Number of splits</label>
                     <div class="col-sm-10">
-                      <input type="number" class="form-control" id="n_splits" min="{{ webapp_settings['user']['n_splits_min'] }}" max="{{ webapp_settings['user']['n_splits_max'] }}">
+                      <input type="number" class="form-control" id="n_splits" min="{{ webapp_settings['user']['n_splits_min'] }}" max="{{ webapp_settings['user']['n_splits_max'] }}" data-settings-category="user">
                     </div>
                   </div>
                   <div class="form-group row">
                     <label for="language" class="col-sm-2 col-form-label">Language</label>
                     <div class="col-sm-10">
-                      <select class="form-control" id="language"></select>
+                      <select class="form-control" id="language" data-settings-category="user"></select>
                     </div>
                   </div>
                 </form>
