@@ -97,6 +97,7 @@ class SettingsWebSocket(WebSocketHandler):
         changed_setting = load(message_io)
 
         settings = self.__app_settings_handler.get_settings()
+        classifier_running_changed = False
 
         for group, value_dict in changed_setting.items():
             for key, value in value_dict.items():
@@ -104,26 +105,16 @@ class SettingsWebSocket(WebSocketHandler):
                     self.__app_settings_handler.set(group, key, value)
 
                     if key == "classifier_running":
-                        if value:
-                            self.text_classification_process = Process(
-                                target=start_text_classifier,
-                                args=(settings, self.status_report_queue,),
-                                name="Text-Classifier")
-                            self.text_classification_process.start()
-                            self.__app_settings_handler.save_settings()
-                        else:
-                            self.status_report_queue.put("Stop")
+                        classifier_running_changed = True
 
-                            if self.text_classification_process is not None:
-                                if self.text_classification_process.is_alive():
-                                    self.text_classification_process.terminate()
-                                    self.text_classification_process.join(timeout=1)
+        # Get a fresh copy with all new values
+        settings = self.__app_settings_handler.get_settings()
 
-                                self.text_classification_process = None
-
-                            self.__app_settings_handler.set(SettingsHandler.PROGRAM_SETTINGS, "classifier_running", False)
-
+        self.__app_settings_handler.save_settings()
         self.write_message(settings)
+
+        if classifier_running_changed:
+            self.__classifier_running_changed(settings)
 
     def data_received(self, chunk):
         pass
@@ -139,3 +130,20 @@ class SettingsWebSocket(WebSocketHandler):
         print("write_settings_to_clients: " + str(io_loops.__len__()))
         for client, io_loop in io_loops.items():
             io_loop.add_callback(client.write_message, dumps(app_settings_handler.get_settings()))
+
+    def __classifier_running_changed(self, settings):
+        if settings[SettingsHandler.PROGRAM_SETTINGS].get("classifier_running"):
+            self.text_classification_process = Process(
+                target=start_text_classifier,
+                args=(settings, self.status_report_queue,),
+                name="Text-Classifier")
+            self.text_classification_process.start()
+        else:
+            self.status_report_queue.put("Stop")
+
+            if self.text_classification_process is not None:
+                if self.text_classification_process.is_alive():
+                    self.text_classification_process.terminate()
+                    self.text_classification_process.join(timeout=1)
+
+                self.text_classification_process = None

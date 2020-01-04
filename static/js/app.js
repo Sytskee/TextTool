@@ -28,10 +28,8 @@ settingsWebSocket.onmessage = function(event) {
 
     $("#webapp_settings").text(event.data);
 
-    setInputs(settings[USER_SETTINGS]);
-    setInputs(settings[PROGRAM_SETTINGS]);
-    setInputs(settings[PROGRAM_SETTINGS]);
-    setStartStopButton(settings[PROGRAM_SETTINGS]["classifier_running"]);
+    setInputs();
+    setStartStopButton();
 
     settings[PROGRAM_SETTINGS]["language_options"].forEach(function(value, index) {
         if (value == settings[USER_SETTINGS]["language"]) {
@@ -44,13 +42,15 @@ settingsWebSocket.onmessage = function(event) {
     })
 };
 
-function setInputs(keyValues) {
-    Object.keys(keyValues).forEach(function(key) {
-        var input = $("input#" + key);
-        if (input.attr("type") == "checkbox") {
-            input.prop("checked", keyValues[key]);
+function setInputs() {
+    $("input[data-settings-category], select[data-settings-category]").each(function(index, element) {
+        element = $(element)
+        var settingsValue = settings[element.data("settings-category")][element.attr("id")];
+
+        if (element.attr("type") == "checkbox") {
+            element.prop("checked", settingsValue);
         } else {
-            input.val(keyValues[key]);
+            element.val(settingsValue);
         }
     });
 }
@@ -66,7 +66,7 @@ function handleStartStopClick(event) {
 function setStartStopButton(classifier_running) {
     var start_stop = $("a#start_stop");
 
-    if (classifier_running) {
+    if (settings[start_stop.data("settings-category")]["classifier_running"]) {
         start_stop
             .addClass("btn-danger")
             .removeClass("btn-success");
@@ -107,7 +107,7 @@ function updateModelButtons(modal) {
             var inputValue = element.val();
         }
 
-        var settingsValue = settings[USER_SETTINGS][element.attr("id")];
+        var settingsValue = settings[element.data("settings-category")][element.attr("id")];
 
         if (inputValue != settingsValue) {
             dataChanged = true;
@@ -141,18 +141,21 @@ function saveSettings(event) {
             var inputValue = element.val();
         }
 
-        var settingsValue = settings[USER_SETTINGS][element.attr("id")];
+        var settingsCategory = element.data("settings-category");
+        var settingsValue = settings[settingsCategory][element.attr("id")];
 
         if (inputValue != settingsValue) {
-            changedSettings[element.attr("id")] = inputValue;
-            settings[USER_SETTINGS][element.attr("id")] = inputValue;
+            if (! (settingsCategory in changedSettings)) {
+                changedSettings[settingsCategory] = {}
+            }
+
+            changedSettings[settingsCategory][element.attr("id")] = inputValue;
+            settings[settingsCategory][element.attr("id")] = inputValue;
         }
     });
 
     if (! $.isEmptyObject(changedSettings)) {
-        settings_to_send = {}
-        settings_to_send[USER_SETTINGS] = changedSettings
-        settingsWebSocket.send(JSON.stringify(settings_to_send));
+        settingsWebSocket.send(JSON.stringify(changedSettings));
 
         if ($(event).data("dismiss") == "modal") {
             modal.modal('hide'); // Hide manually because hide via 'data-dismiss' does not work after disabling button
