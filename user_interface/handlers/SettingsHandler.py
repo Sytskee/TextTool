@@ -30,8 +30,9 @@ class SettingsHandler(metaclass=Singleton):
         return settings_copy
 
     def set(self, group, key, new_value):
-        if new_value != self.__settings[group].get(key):
-            old_value = self.__settings[group].get(key)
+        old_value = self.__settings[group].get(key)
+
+        if new_value != old_value:
             self.__settings[group][key] = new_value
 
             self.__handle_special_cases(key, new_value)
