@@ -144,6 +144,16 @@ function saveSettings(event) {
         var settingsCategory = element.data("settings-category");
         var settingsValue = settings[settingsCategory][element.attr("id")];
 
+        var dataType = element.data("type")
+        if (dataType != null) {
+            inputValue = convertToCorrectType(inputValue, dataType);
+
+            if (inputValue == null) {
+                inputValue = settingsValue;
+            } else {
+            }
+        }
+
         if (inputValue != settingsValue) {
             if (! (settingsCategory in changedSettings)) {
                 changedSettings[settingsCategory] = {}
@@ -162,6 +172,39 @@ function saveSettings(event) {
         }
 
         updateModelButtons(modal);
+    }
+}
+
+function convertToCorrectType(new_value, dataType) {
+    if (dataType == null) {
+        return new_value;
+    }
+
+    var dataTypes = dataType.split("_", 2);
+
+    if (dataTypes[0] == "array") {
+        var new_values = new_value.split(",");
+        var new_array = []
+
+        new_values.forEach(function(value, index) {
+            converted_value = convertToCorrectType(value, dataTypes[1]);
+
+            if (converted_value == null) {
+                new_array = null;
+                return;
+            }
+
+            new_array.push(converted_value);
+        });
+
+        return new_array;
+    } else if (dataTypes[0] == "number") {
+        var number = Number(new_value);
+        if (Number.isNaN(number)) {
+            return null;
+        } else {
+            return number;
+        }
     }
 }
 

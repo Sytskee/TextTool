@@ -380,6 +380,14 @@
                       <select class="form-control" id="language" data-settings-category="user"></select>
                     </div>
                   </div>
+
+                  <div class="form-group row">
+                    <label for="text__vect__min_df" class="col-sm-2 col-form-label form-control-label">Number of training documents a term should occur in</label>
+                    <div class="col-sm-10">
+                      <input type="text" class="form-control form-control-plaintext" id="text__vect__min_df" data-settings-category="classifier" data-type="array_number">
+                    </div>
+                  </div>
+
                 </form>
                 <button class="btn btn-primary apply disabled" href="#" onclick="saveSettings(this);" disabled="disabled">
                   <i class="fas fa-times fa-fw"></i>
