@@ -76,11 +76,12 @@ class SettingsHandler(metaclass=Singleton):
             "number_of_classes": -1,
             "language_options": stopwords.fileids(),
             "classifier_running": False,
+            "text__vect__ngram_range_options": [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (1, 2), (1, 3), (1, 4), (1, 5)],
         }
 
         self.__settings[SettingsHandler.USER_SETTINGS] = {
             "n_splits": 3,
-            "n_splits_min": 3,
+            "n_splits_min": 2,
             "n_splits_max": 10,
             "output_path": str(current_path.joinpath("output")),
             "language": "english",

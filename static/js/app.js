@@ -31,15 +31,39 @@ settingsWebSocket.onmessage = function(event) {
     setInputs();
     setStartStopButton();
 
+    var select_language = $("select#language");
+
     settings[PROGRAM_SETTINGS]["language_options"].forEach(function(value, index) {
         if (value == settings[USER_SETTINGS]["language"]) {
-            var selected = " selected";
+            var selected = " selected='selected'";
         } else {
             var selected = "";
         }
 
-        $("select#language").append(`<option value="${value}"${selected}>${value}</option>`);
-    })
+        select_language.append(`<option value="${value}"${selected}>${value}</option>`);
+    });
+
+    var ngrams = $("select#text__vect__ngram_range > optgroup[label='N-grams']");
+    var multigrams = $("select#text__vect__ngram_range > optgroup[label='N-multigrams']");
+
+    settings[PROGRAM_SETTINGS]["text__vect__ngram_range_options"].forEach(function(option_value, index) {
+        var selected = "";
+
+        for (var value of settings[CLASSIFIER_SETTINGS]["text__vect__ngram_range"]) {
+            if (value.toString() == option_value.toString()) {
+                selected = " selected='selected'";
+                break;
+            }
+        }
+
+        var option = `<option value="${option_value}"${selected}>(${option_value})</option>`;
+
+        if (option_value[0] == option_value[1]) {
+            ngrams.append(option);
+        } else {
+            multigrams.append(option);
+        }
+    });
 };
 
 function setInputs() {
