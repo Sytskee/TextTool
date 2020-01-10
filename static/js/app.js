@@ -18,10 +18,14 @@ loggingWebSocket.onclose = function(event) {
 };
 
 loggingWebSocket.onmessage = function(event) {
-    var loggingTextArea = $("#logging");
-    loggingTextArea.val(loggingTextArea.val() + event.data);
-    loggingTextArea.scrollTop(loggingTextArea[0].scrollHeight);
+    addLogToTextArea(event.data);
 };
+
+function addLogToTextArea(log) {
+    var loggingTextArea = $("#logging");
+    loggingTextArea.val(loggingTextArea.val() + log);
+    loggingTextArea.scrollTop(loggingTextArea[0].scrollHeight);
+}
 
 settingsWebSocket.onmessage = function(event) {
     settings = JSON.parse(event.data);
@@ -173,8 +177,8 @@ function saveSettings(event) {
             inputValue = convertToCorrectType(inputValue, dataType);
 
             if (inputValue == null) {
+                // Reset faulty value
                 inputValue = settingsValue;
-            } else {
             }
         }
 
@@ -225,6 +229,7 @@ function convertToCorrectType(new_value, dataType) {
     } else if (dataTypes[0] == "number") {
         var number = Number(new_value);
         if (Number.isNaN(number)) {
+            addLogToTextArea("Expected a number but got '" + new_value + "'\r\n");
             return null;
         } else {
             return number;
