@@ -45,7 +45,7 @@ settingsWebSocket.onmessage = function(event) {
 function setInputs() {
     $("input[data-settings-category], select[data-settings-category]").each(function(index, element) {
         element = $(element)
-        var settingsValue = settings[element.data("settings-category")][element.attr("id")];
+        var settingsValue = settings[element.data("settingsCategory")][element.attr("id")];
 
         if (element.attr("type") == "checkbox") {
             element.prop("checked", settingsValue);
@@ -66,7 +66,7 @@ function handleStartStopClick(event) {
 function setStartStopButton(classifier_running) {
     var start_stop = $("a#start_stop");
 
-    if (settings[start_stop.data("settings-category")]["classifier_running"]) {
+    if (settings[start_stop.data("settingsCategory")]["classifier_running"]) {
         start_stop
             .addClass("btn-danger")
             .removeClass("btn-success");
@@ -107,7 +107,7 @@ function updateModelButtons(modal) {
             var inputValue = element.val();
         }
 
-        var settingsValue = settings[element.data("settings-category")][element.attr("id")];
+        var settingsValue = settings[element.data("settingsCategory")][element.attr("id")];
 
         if (inputValue != settingsValue) {
             dataChanged = true;
@@ -141,7 +141,7 @@ function saveSettings(event) {
             var inputValue = element.val();
         }
 
-        var settingsCategory = element.data("settings-category");
+        var settingsCategory = element.data("settingsCategory");
         var settingsValue = settings[settingsCategory][element.attr("id")];
 
         var dataType = element.data("type")
