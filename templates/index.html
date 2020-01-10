@@ -346,7 +346,7 @@
                   <div class="form-group row">
                     <label for="number_of_classes" class="col-sm-2 col-form-label">Number of classes</label>
                       <div class="col-sm-10">
-                        <input type="text" readonly class="form-control-plaintext" id="number_of_classes" data-settings-category="program">
+                        <input type="text" readonly class="form-control form-control-plaintext" id="number_of_classes" data-settings-category="program">
                       </div>
                   </div>
                   <div class="form-group row">
@@ -359,13 +359,13 @@
                   <div class="form-group row">
                     <label for="data_files_path" class="col-sm-2 col-form-label">Data files</label>
                     <div class="col-sm-10">
-                      <input type="text" class="form-control-plaintext" id="data_files_path" data-settings-category="user">
+                      <input type="text" class="form-control" id="data_files_path" data-settings-category="user">
                     </div>
                   </div>
                   <div class="form-group row">
                     <label for="output_path" class="col-sm-2 col-form-label">Output path</label>
                     <div class="col-sm-10">
-                      <input type="text" class="form-control-plaintext" id="output_path" data-settings-category="user">
+                      <input type="text" class="form-control" id="output_path" data-settings-category="user">
                     </div>
                   </div>
                   <div class="form-group row">
@@ -384,7 +384,8 @@
                   <div class="form-group row">
                     <label for="text__vect__min_df" class="col-sm-2 col-form-label form-control-label">Number of training documents a term should occur in</label>
                     <div class="col-sm-10">
-                      <input type="text" class="form-control form-control-plaintext" id="text__vect__min_df" data-settings-category="classifier" data-type="array_number">
+                      <input type="text" class="form-control" id="text__vect__min_df" data-settings-category="classifier" data-type="array_number">
+                      <small id="text__vect__min_dfHelp" class="form-text text-muted">Comma separated list of numbers</small>
                     </div>
                   </div>
 
