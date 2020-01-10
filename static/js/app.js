@@ -9,11 +9,11 @@ var USER_SETTINGS = "user";
 var PROGRAM_SETTINGS = "program";
 var CLASSIFIER_SETTINGS = "classifier";
 
-loggingWebSocket.onopen = function(event) {
+settingsWebSocket.onopen = function(event) {
     $("a#start_stop").removeClass("disabled");
 };
 
-loggingWebSocket.onclose = function(event) {
+settingsWebSocket.onclose = function(event) {
     $("a#start_stop").addClass("disabled");
 };
 
