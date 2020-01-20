@@ -70,6 +70,25 @@ class SettingsHandler(metaclass=Singleton):
                 self.set(SettingsHandler.PROGRAM_SETTINGS, "number_of_classes", -1)
                 self.__status_report_queue.put("Not a valid directory selected: " + new_value)
 
+    def __helpers_to_real_values(self):
+        """ TODO: Use this, and make sure it works """
+        for key, value in self.__settings[SettingsHandler.CLASSIFIER_SETTINGS].items():
+            if key.startswith("helper_"):
+                real_key = key[7:]
+
+                if real_key == "text__vect__stop_words":
+                    result = []
+
+                    for use_stop_words in value:
+                        if use_stop_words:
+                            language = self.__settings[SettingsHandler.USER_SETTINGS]["language"]
+                            result.append(stopwords.words(language))
+                        else:
+                            result.append(None)
+
+                    self.__settings[SettingsHandler.CLASSIFIER_SETTINGS][real_key] = result
+
+
     def __set_configuration_defaults(self, current_path):
         self.__settings[SettingsHandler.PROGRAM_SETTINGS] = {
             "software_version": "0.2",
@@ -95,7 +114,8 @@ class SettingsHandler(metaclass=Singleton):
             "text__vect__min_df": [1, 2, 3],  # Number of training documents a term should occur in
             "text__vect__ngram_range": [(1, 1), (2, 2), (3, 3), (1, 3)],
             # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
-            "text__vect__stop_words": ["#language", None],
+            #"text__vect__stop_words": [None],
+            "helper_text__vect__stop_words": [False],
             # Do/do not remove stopwords
             "text__tfidf__use_idf": [True, False],  # Weight terms by tf or tfidf
             "chi2__k": chi2__k,  # Select K most informative features
