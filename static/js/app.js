@@ -77,6 +77,8 @@ function setInputs() {
 
         if (element.attr("type") == "checkbox") {
             element.prop("checked", settingsValue);
+        } else if (element.data("type").startsWith("array")) {
+            element.val(settingsValue.toString());
         } else {
             element.val(settingsValue);
         }
@@ -132,7 +134,7 @@ function updateModelButtons(modal) {
         if (element.attr("type") == "checkbox") {
             var inputValue = element.prop("checked");
         } else {
-            var inputValue = element.val();
+            var inputValue = convertToCorrectType(inputValue, element.data("type"));
         }
 
         var settingsValue = settings[element.data("settingsCategory")][element.attr("id")];
@@ -163,24 +165,17 @@ function saveSettings(event) {
 
         if (element.attr("type") == "checkbox") {
             var inputValue = element.prop("checked");
-        } else if ($(this).attr("type") == "number") {
-            var inputValue = Number(element.val());
         } else {
-            var inputValue = element.val();
+            var inputValue = convertToCorrectType(element.val(), element.data("type"));
+        }
+
+        if (inputValue == null) {
+            // Reset faulty value
+            inputValue = settingsValue;
         }
 
         var settingsCategory = element.data("settingsCategory");
         var settingsValue = settings[settingsCategory][element.attr("id")];
-
-        var dataType = element.data("type")
-        if (dataType != null) {
-            inputValue = convertToCorrectType(inputValue, dataType);
-
-            if (inputValue == null) {
-                // Reset faulty value
-                inputValue = settingsValue;
-            }
-        }
 
         if (inputValue != settingsValue) {
             if (! (settingsCategory in changedSettings)) {
@@ -234,6 +229,8 @@ function convertToCorrectType(new_value, dataType) {
         } else {
             return number;
         }
+    } else if (dataTypes[0] == "boolean") {
+        return new_value == "true";
     }
 }
 
