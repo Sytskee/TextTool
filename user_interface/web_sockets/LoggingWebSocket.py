@@ -1,13 +1,7 @@
-import asyncio
-from typing import Any
-
 from concurrent.futures import ThreadPoolExecutor
-
-import tornado.web
-from tornado import httputil
+from queue import Empty
 from tornado.ioloop import IOLoop
-from tornado.websocket import WebSocketHandler
-
+from tornado.websocket import WebSocketHandler, WebSocketClosedError
 from user_interface.handlers.SettingsHandler import SettingsHandler
 
 
@@ -21,25 +15,39 @@ class LoggingWebSocket(WebSocketHandler):
         self.executor.submit(self.get_logging)
 
         self.__app_settings_handler = SettingsHandler()
+        self.is_closed = False
 
     def on_message(self, message):
         self.write_message(u"You said: " + message + "\r\n")
+
+    def on_close(self):
+        self.is_closed = True
+        self.executor.shutdown(wait=False)
+        print("LoggingWebSocket closed")
 
     def data_received(self, chunk):
         pass
 
     def get_logging(self):
-        # Blocking call on queue
-        message = self.status_report_queue.get()
+        try:
+            # Blocking call on queue
+            message = self.status_report_queue.get(timeout=1)
 
-        # Use the main IOLoop to publish the message
-        self.io_loop.add_callback(self.publish, message)
+            # Use the main IOLoop to publish the message
+            self.io_loop.add_callback(self.publish, message)
+        except Empty:
+            # Ignore timeout and keep trying until connection is closed
+            pass
 
-        # Recursive call to self
-        self.executor.submit(self.get_logging)
+        if not self.is_closed:
+            # Recursive call to self
+            self.executor.submit(self.get_logging)
 
     def publish(self, message):
-        self.write_message(message + "\r\n")
+        try:
+            self.write_message(message + "\r\n")
+        except WebSocketClosedError as err:
+            print('WebSocketClosedError: {0}'.format(err))
 
         '''TODO: must be done in a proper way'''
         if message.endswith('All done!'):
