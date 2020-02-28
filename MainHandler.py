@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     config_file_path = config_path.joinpath("config.ini")
     if not config_file_path.is_file():
-        config_file_path.touch()
+        config_file_path.write_text(data="{}", encoding="UTF-8")
 
     config = {}
 
