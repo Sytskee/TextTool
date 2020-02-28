@@ -57,7 +57,7 @@ if __name__ == "__main__":
     config_path = current_path.joinpath("config")
     config_path.mkdir(parents=True, exist_ok=True)
 
-    config_file_path = config_path.joinpath("config.ini")
+    config_file_path = config_path.joinpath("config.json")
     if not config_file_path.is_file():
         config_file_path.write_text(data="{}", encoding="UTF-8")
 
