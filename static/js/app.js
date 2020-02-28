@@ -77,7 +77,7 @@ function setInputs() {
 
         if (element.attr("type") == "checkbox") {
             element.prop("checked", settingsValue);
-        } else if (element.data("type").startsWith("array")) {
+        } else if (element.data("type") != null && element.data("type").startsWith("array")) {
             element.val(settingsValue.toString());
         } else {
             element.val(settingsValue);
@@ -231,6 +231,20 @@ function convertToCorrectType(new_value, dataType) {
         }
     } else if (dataTypes[0] == "boolean") {
         return new_value == "true";
+    } else if (dataTypes[0] == "tuples") {
+        var new_array = [];
+
+        for (element of new_value) {
+            var tuple = element.split(",");
+
+            for (index in tuple) {
+                tuple[index] = convertToCorrectType(tuple[index], dataTypes[1]);
+            }
+
+            new_array.push(tuple)
+        }
+
+        return new_array;
     }
 }
 
