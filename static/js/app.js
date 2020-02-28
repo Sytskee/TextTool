@@ -36,6 +36,7 @@ settingsWebSocket.onmessage = function(event) {
     setStartStopButton();
 
     var select_language = $("select#language");
+    select_language.empty();
 
     settings[PROGRAM_SETTINGS]["language_options"].forEach(function(value, index) {
         if (value == settings[USER_SETTINGS]["language"]) {
@@ -48,7 +49,10 @@ settingsWebSocket.onmessage = function(event) {
     });
 
     var ngrams = $("select#text__vect__ngram_range > optgroup[label='N-grams']");
+    ngrams.empty();
+
     var multigrams = $("select#text__vect__ngram_range > optgroup[label='N-multigrams']");
+    multigrams.empty();
 
     settings[PROGRAM_SETTINGS]["text__vect__ngram_range_options"].forEach(function(option_value, index) {
         var selected = "";
