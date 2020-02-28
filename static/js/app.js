@@ -134,7 +134,7 @@ function updateModelButtons(modal) {
         if (element.attr("type") == "checkbox") {
             var inputValue = element.prop("checked");
         } else {
-            var inputValue = convertToCorrectType(inputValue, element.data("type"));
+            var inputValue = convertToCorrectType(element.val(), element.data("type"));
         }
 
         var settingsValue = settings[element.data("settingsCategory")][element.attr("id")];
@@ -246,6 +246,8 @@ function convertToCorrectType(new_value, dataType) {
 
         return new_array;
     }
+
+    return new_value;
 }
 
 function discardSettings(event) {
