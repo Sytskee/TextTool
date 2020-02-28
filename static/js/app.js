@@ -128,7 +128,7 @@ $("#portfolioTrain input, #portfolioTrain select").change(function() {
 function updateModelButtons(modal) {
     var dataChanged = false;
 
-    modal.find("input, select").each(function(index, element) {
+    modal.find("input:not([readonly]), select:not([readonly])").each(function(index, element) {
         element = $(element);
 
         if (element.attr("type") == "checkbox") {
@@ -207,7 +207,7 @@ function convertToCorrectType(new_value, dataType) {
 
     if (dataTypes[0] == "array") {
         var new_values = new_value.split(",");
-        var new_array = []
+        var new_array = [];
 
         new_values.forEach(function(value, index) {
             converted_value = convertToCorrectType(value, dataTypes[1]);
