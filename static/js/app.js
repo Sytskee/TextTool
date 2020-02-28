@@ -139,7 +139,13 @@ function updateModelButtons(modal) {
 
         var settingsValue = settings[element.data("settingsCategory")][element.attr("id")];
 
-        if (inputValue != settingsValue) {
+
+        if ($.isArray(settingsValue)) {
+            if (JSON.stringify(inputValue) != JSON.stringify(settingsValue)) {
+                dataChanged = true;
+                return false; // break 'each()' loop
+            }
+        } else if (inputValue != settingsValue) {
             dataChanged = true;
             return false; // break 'each()' loop
         }
