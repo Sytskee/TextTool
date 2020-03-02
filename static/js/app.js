@@ -36,45 +36,34 @@ settingsWebSocket.onmessage = function(event) {
     setStartStopButton();
 
     var select_language = $("select#language");
-    select_language.empty();
 
-    settings[PROGRAM_SETTINGS]["language_options"].forEach(function(value, index) {
-        if (value == settings[USER_SETTINGS]["language"]) {
-            var selected = " selected='selected'";
-        } else {
-            var selected = "";
-        }
+    if (select_language.html() == "") {
+        settings[PROGRAM_SETTINGS]["language_options"].forEach(function(value, index) {
+            select_language.append(`<option>${value}</option>`);
+        });
+    }
 
-        select_language.append(`<option value="${value}"${selected}>${value}</option>`);
-    });
+    select_language.val(settings[USER_SETTINGS]["language"]);
 
     var grams_select = $("select#text__vect__ngram_range");
     var ngrams = grams_select.find("optgroup[label='N-grams']");
-    ngrams.empty();
-
     var multigrams = grams_select.find("optgroup[label='N-multigrams']");
-    multigrams.empty();
 
-    settings[PROGRAM_SETTINGS]["text__vect__ngram_range_options"].forEach(function(option_value, index) {
-        var selected = "";
+    if (ngrams.html() == "" && multigrams.html() == "") {
+        settings[PROGRAM_SETTINGS]["text__vect__ngram_range_options"].forEach(function(option_value, index) {
+            var option = `<option value="${option_value}">(${option_value})</option>`;
 
-        for (var value of settings[CLASSIFIER_SETTINGS]["text__vect__ngram_range"]) {
-            if (value.toString() == option_value.toString()) {
-                selected = " selected='selected'";
-                break;
+            if (option_value[0] == option_value[1]) {
+                ngrams.append(option);
+            } else {
+                multigrams.append(option);
             }
-        }
+        });
 
-        var option = `<option value="${option_value}"${selected}>(${option_value})</option>`;
+        grams_select.selectpicker("render");
+    }
 
-        if (option_value[0] == option_value[1]) {
-            ngrams.append(option);
-        } else {
-            multigrams.append(option);
-        }
-    });
-
-    grams_select.selectpicker("render");
+    grams_select.val(settings[CLASSIFIER_SETTINGS]["text__vect__ngram_range"]);
 };
 
 function setInputs() {
