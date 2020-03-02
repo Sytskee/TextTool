@@ -48,10 +48,11 @@ settingsWebSocket.onmessage = function(event) {
         select_language.append(`<option value="${value}"${selected}>${value}</option>`);
     });
 
-    var ngrams = $("select#text__vect__ngram_range > optgroup[label='N-grams']");
+    var grams_select = $("select#text__vect__ngram_range");
+    var ngrams = grams_select.find("optgroup[label='N-grams']");
     ngrams.empty();
 
-    var multigrams = $("select#text__vect__ngram_range > optgroup[label='N-multigrams']");
+    var multigrams = grams_select.find("optgroup[label='N-multigrams']");
     multigrams.empty();
 
     settings[PROGRAM_SETTINGS]["text__vect__ngram_range_options"].forEach(function(option_value, index) {
@@ -72,6 +73,8 @@ settingsWebSocket.onmessage = function(event) {
             multigrams.append(option);
         }
     });
+
+    grams_select.selectpicker("render");
 };
 
 function setInputs() {
@@ -81,10 +84,24 @@ function setInputs() {
 
         if (element.attr("type") == "checkbox") {
             element.prop("checked", settingsValue);
+        } else if (element.hasClass("selectpicker")) {
+            if (element.attr("id") == "text__vect__ngram_range" && $.isArray(settingsValue)) {
+                var converted_value = settingsValue.map(function(val) {
+                    return val.toString();
+                });
+                element.selectpicker('val', converted_value);
+            } else {
+                element.selectpicker('val', settingsValue);
+            }
+
         } else if (element.data("type") != null && element.data("type").startsWith("array")) {
             element.val(settingsValue.toString());
         } else {
             element.val(settingsValue);
+        }
+
+        if (element.hasClass("selectpicker")) {
+            element.selectpicker("render");
         }
     });
 }
@@ -137,12 +154,13 @@ function updateModelButtons(modal) {
 
         if (element.attr("type") == "checkbox") {
             var inputValue = element.prop("checked");
+        } else if (element.hasClass("selectpicker")) {
+            var inputValue = convertToCorrectType(element.selectpicker('val'), element.data("type"));
         } else {
             var inputValue = convertToCorrectType(element.val(), element.data("type"));
         }
 
         var settingsValue = settings[element.data("settingsCategory")][element.attr("id")];
-
 
         if ($.isArray(settingsValue)) {
             if (JSON.stringify(inputValue) != JSON.stringify(settingsValue)) {
