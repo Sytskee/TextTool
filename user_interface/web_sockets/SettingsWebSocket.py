@@ -107,10 +107,10 @@ class SettingsWebSocket(WebSocketHandler):
                     if key == "classifier_running":
                         classifier_running_changed = True
 
+        self.__app_settings_handler.save_settings()
+
         # Get a fresh copy with all new values
         settings = self.__app_settings_handler.get_settings()
-
-        self.__app_settings_handler.save_settings()
         self.write_message(settings)
 
         if classifier_running_changed:
