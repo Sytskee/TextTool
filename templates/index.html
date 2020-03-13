@@ -406,6 +406,38 @@
                       </select>
                     </div>
                   </div>
+                  <div class="form-group row">
+                    <label for="text__tfidf__use_idf" class="col-sm-2 col-form-label form-control-label">Use idf</label>
+                    <div class="col-sm-10">
+                      <select class="form-control" id="text__tfidf__use_idf" data-settings-category="classifier" data-type="array_boolean">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                        <option value="true,false">Yes and No</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <label class="col-sm-2 col-form-label form-control-label">CHI2 K range</label>
+                    <div class="col-sm">
+                      <label for="chi2__k_start" class="form-control-label">Start</label>
+                      <input type="number" class="form-control" id="chi2__k_start" step="1" min="0" data-settings-category="classifier" data-type="number">
+                    </div>
+                    <div class="col-sm">
+                      <label for="chi2__k_stop" class="form-control-label">Stop</label>
+                      <input type="number" class="form-control" id="chi2__k_stop" step="1" min="0" data-settings-category="classifier" data-type="number">
+                    </div>
+                    <div class="col-sm">
+                      <label for="chi2__k_step" class="form-control-label">Step</label>
+                      <input type="number" class="form-control" id="chi2__k_step" step="1" min="0" data-settings-category="classifier" data-type="number">
+                    </div>
+                    <div class="col-sm">
+                      <label for="chi2__k_all" class="form-control-label">All</label>
+                      <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="chi2__k_all" data-settings-category="classifier" data-type="boolean">
+                        <label for="chi2__k_all" class="custom-control-label"></label>
+                      </div>
+                    </div>
+                  </div>
                 </form>
                 <button class="btn btn-primary apply disabled" href="#" onclick="saveSettings(this);" disabled="disabled">
                   <i class="fas fa-times fa-fw"></i>

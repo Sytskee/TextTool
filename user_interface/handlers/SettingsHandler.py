@@ -69,6 +69,14 @@ class SettingsHandler(metaclass=Singleton):
             else:
                 self.set(SettingsHandler.PROGRAM_SETTINGS, "number_of_classes", -1)
                 self.__status_report_queue.put("Not a valid directory selected: " + new_value)
+        elif key.startswith("chi2__k_"):
+            start = self.get(SettingsHandler.CLASSIFIER_SETTINGS, "chi2__k_start")
+            stop = self.get(SettingsHandler.CLASSIFIER_SETTINGS, "chi2__k_stop")
+            step = self.get(SettingsHandler.CLASSIFIER_SETTINGS, "chi2__k_step")
+            is_all_set = self.get(SettingsHandler.CLASSIFIER_SETTINGS, "chi2__k_all")
+
+            chi2__k = self.create_chi2_k_value(start, stop, step, is_all_set)
+            self.set(SettingsHandler.CLASSIFIER_SETTINGS, "chi2__k", chi2__k)
 
     def __helpers_to_real_values(self):
         """ TODO: Use this, and make sure it works """
@@ -107,8 +115,11 @@ class SettingsHandler(metaclass=Singleton):
             "data_files_path": str(current_path.joinpath("data")),
         }
 
-        chi2__k = list(range(10, 501, 20))  # Set parameter range + step size for Select K best features
-        chi2__k.append('all')
+        chi2__k_start = 10
+        chi2__k_step = 20
+        chi2__k_stop = 501
+        chi2__k_all = True
+        chi2__k = self.create_chi2_k_value(chi2__k_start, chi2__k_stop, chi2__k_step, chi2__k_all)
 
         self.__settings[SettingsHandler.CLASSIFIER_SETTINGS] = {
             "text__vect__min_df": [1, 2, 3],  # Number of training documents a term should occur in
@@ -118,6 +129,10 @@ class SettingsHandler(metaclass=Singleton):
             "helper_text__vect__stop_words": [False],
             # Do/do not remove stopwords
             "text__tfidf__use_idf": [True, False],  # Weight terms by tf or tfidf
+            "chi2__k_start": chi2__k_start,
+            "chi2__k_step": chi2__k_step,
+            "chi2__k_stop": chi2__k_stop,
+            "chi2__k_all": chi2__k_all,
             "chi2__k": chi2__k,  # Select K most informative features
             "clf__C": [1, 2, 3, 10, 100, 1000],  # Compare different values for C parameter
             "clf__class_weight": ["balanced"],  # Weighted vs non-weighted classes
@@ -126,3 +141,10 @@ class SettingsHandler(metaclass=Singleton):
         }
 
         self.__settings[SettingsHandler.INTERNAL_SETTINGS] = {}
+
+    @staticmethod
+    def create_chi2_k_value(start, stop, step, all):
+        chi2__k = list(range(start, stop, step))  # Set parameter range + step size for Select K best features
+        if all:
+            chi2__k.append('all')
+        return chi2__k
