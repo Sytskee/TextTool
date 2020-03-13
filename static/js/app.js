@@ -151,12 +151,7 @@ function updateModelButtons(modal) {
 
         var settingsValue = settings[element.data("settingsCategory")][element.attr("id")];
 
-        if ($.isArray(settingsValue)) {
-            if (JSON.stringify(inputValue) != JSON.stringify(settingsValue)) {
-                dataChanged = true;
-                return false; // break 'each()' loop
-            }
-        } else if (inputValue != settingsValue) {
+        if (inputValueChanged(settingsValue, inputValue)) {
             dataChanged = true;
             return false; // break 'each()' loop
         }
@@ -186,16 +181,16 @@ function saveSettings(event) {
             var inputValue = convertToCorrectType(element.val(), element.data("type"));
         }
 
+        var settingsCategory = element.data("settingsCategory");
+        var settingsValue = settings[settingsCategory][element.attr("id")];
+
         if (inputValue == null) {
             // Reset faulty value
             inputValue = settingsValue;
         }
 
-        var settingsCategory = element.data("settingsCategory");
-        var settingsValue = settings[settingsCategory][element.attr("id")];
-
-        if (inputValue != settingsValue) {
-            if (! (settingsCategory in changedSettings)) {
+        if (inputValueChanged(settingsValue, inputValue)) {
+            if (!(settingsCategory in changedSettings)) {
                 changedSettings[settingsCategory] = {}
             }
 
@@ -204,7 +199,7 @@ function saveSettings(event) {
         }
     });
 
-    if (! $.isEmptyObject(changedSettings)) {
+    if (!$.isEmptyObject(changedSettings)) {
         settingsWebSocket.send(JSON.stringify(changedSettings));
 
         if ($(event).data("dismiss") == "modal") {
@@ -213,6 +208,18 @@ function saveSettings(event) {
 
         updateModelButtons(modal);
     }
+}
+
+function inputValueChanged(currentValue, inputValue) {
+    if ($.isArray(currentValue)) {
+        if (JSON.stringify(inputValue) != JSON.stringify(currentValue)) {
+            return true;
+        }
+    } else if (inputValue != currentValue) {
+        return true;
+    }
+
+    return false;
 }
 
 function convertToCorrectType(new_value, dataType) {
