@@ -77,25 +77,20 @@ class SettingsHandler(metaclass=Singleton):
 
             chi2__k = self.create_chi2_k_value(start, stop, step, is_all_set)
             self.set(SettingsHandler.CLASSIFIER_SETTINGS, "chi2__k", chi2__k)
+        elif key.startswith("helper_"):
+            real_key = key[7:]
 
-    def __helpers_to_real_values(self):
-        """ TODO: Use this, and make sure it works """
-        for key, value in self.__settings[SettingsHandler.CLASSIFIER_SETTINGS].items():
-            if key.startswith("helper_"):
-                real_key = key[7:]
+            if real_key == "text__vect__stop_words":
+                result = []
 
-                if real_key == "text__vect__stop_words":
-                    result = []
+                if True in new_value:
+                    language = self.__settings[SettingsHandler.USER_SETTINGS]["language"]
+                    result.append(stopwords.words(language))
 
-                    for use_stop_words in value:
-                        if use_stop_words:
-                            language = self.__settings[SettingsHandler.USER_SETTINGS]["language"]
-                            result.append(stopwords.words(language))
-                        else:
-                            result.append(None)
+                if False in new_value:
+                    result.append(None)
 
-                    self.__settings[SettingsHandler.CLASSIFIER_SETTINGS][real_key] = result
-
+                self.__settings[SettingsHandler.CLASSIFIER_SETTINGS][real_key] = result
 
     def __set_configuration_defaults(self, current_path):
         self.__settings[SettingsHandler.PROGRAM_SETTINGS] = {
