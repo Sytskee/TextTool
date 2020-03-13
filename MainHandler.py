@@ -69,5 +69,3 @@ if __name__ == "__main__":
     tornado.ioloop.IOLoop.current().start()
 
     app.status_report_queue.close()
-
-    save_config()
