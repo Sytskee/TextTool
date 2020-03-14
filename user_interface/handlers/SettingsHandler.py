@@ -118,11 +118,9 @@ class SettingsHandler(metaclass=Singleton):
 
         self.__settings[SettingsHandler.CLASSIFIER_SETTINGS] = {
             "text__vect__min_df": [1, 2, 3],  # Number of training documents a term should occur in
-            "text__vect__ngram_range": [(1, 1), (2, 2), (3, 3), (1, 3)],
-            # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
-            #"text__vect__stop_words": [None],
-            "helper_text__vect__stop_words": [False],
-            # Do/do not remove stopwords
+            "text__vect__ngram_range": [(1, 1), (2, 2), (3, 3), (1, 3)],  # Test uni-, bi-, tri-, or N-multigrams ranging from 1-3
+            "text__vect__stop_words": [None],
+            "helper_text__vect__stop_words": [False],  # Do/do not remove stopwords
             "text__tfidf__use_idf": [True, False],  # Weight terms by tf or tfidf
             "chi2__k_start": chi2__k_start,
             "chi2__k_step": chi2__k_step,
