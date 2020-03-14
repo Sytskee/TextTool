@@ -54,7 +54,7 @@ class SettingsHandler(metaclass=Singleton):
         settings_copy.pop(SettingsHandler.INTERNAL_SETTINGS, None)
 
         with open(self.__settings_file, 'w') as configfile:
-            json.dump(settings_copy, configfile)
+            json.dump(settings_copy, configfile, sort_keys=True, indent=2)
 
     def __notify(self, key, old_value, new_value):
         for listener in self.__onchange_listeners:
