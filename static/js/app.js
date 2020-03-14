@@ -59,11 +59,9 @@ settingsWebSocket.onmessage = function(event) {
                 multigrams.append(option);
             }
         });
-
-        grams_select.selectpicker("render");
     }
 
-    grams_select.val(settings[CLASSIFIER_SETTINGS]["text__vect__ngram_range"]);
+    grams_select.selectpicker("val", settings[CLASSIFIER_SETTINGS]["text__vect__ngram_range"]);
 };
 
 function setInputs() {
@@ -78,9 +76,9 @@ function setInputs() {
                 var converted_value = settingsValue.map(function(val) {
                     return val.toString();
                 });
-                element.selectpicker('val', converted_value);
+                element.selectpicker("val", converted_value);
             } else {
-                element.selectpicker('val', settingsValue);
+                element.selectpicker("val", settingsValue);
             }
 
         } else if (element.data("type") != null && element.data("type").startsWith("array")) {
