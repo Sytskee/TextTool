@@ -1,4 +1,4 @@
-'''
+"""
 =====================================================================================
 Script for the selection and evaluation of a new supervised text classification model
 =====================================================================================
@@ -13,7 +13,7 @@ A full explanation of the text classification pipeline and exhaustive CV Gridsea
 The code for the pipeline and the gridsearchCV is partly based on the Scikitlearn example script "grid_search_text_feature_extraction.py"
 by O. Grisel, P. Prettenhofer, and M. Blondel. This is open source code published on the Scikitlearn website under the BSD 3-clause license.
 Retrieved on 01-08-2016 from: http://scikit-learn.org/0.15/auto_examples/grid_search_text_feature_extraction.html
-'''
+"""
 
 import inspect
 import logging
