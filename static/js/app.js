@@ -62,6 +62,16 @@ settingsWebSocket.onmessage = function(event) {
     }
 
     grams_select.selectpicker("val", settings[CLASSIFIER_SETTINGS]["text__vect__ngram_range"]);
+
+    var select_language = $("select#scoring");
+
+    if (select_language.html() == "") {
+        settings[PROGRAM_SETTINGS]["scoring_options"].forEach(function(value, index) {
+            select_language.append(`<option>${value}</option>`);
+        });
+    }
+
+    select_language.selectpicker("val", settings[CLASSIFIER_SETTINGS]["scoring"]);
 };
 
 function setInputs() {

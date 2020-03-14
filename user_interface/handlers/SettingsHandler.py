@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from util.Singleton import Singleton
 from nltk.corpus import stopwords
+from sklearn.metrics import SCORERS
 
 
 class SettingsHandler(metaclass=Singleton):
@@ -91,6 +92,17 @@ class SettingsHandler(metaclass=Singleton):
                     result.append(None)
 
                 self.__settings[SettingsHandler.CLASSIFIER_SETTINGS][real_key] = result
+            elif real_key == "clf__class_weight":
+                result = []
+
+                if True in new_value:
+                    result.append("balanced")
+
+                if False in new_value:
+                    result.append(None)
+
+                self.__settings[SettingsHandler.CLASSIFIER_SETTINGS][real_key] = result
+
 
     def __set_configuration_defaults(self, current_path):
         self.__settings[SettingsHandler.PROGRAM_SETTINGS] = {
@@ -99,6 +111,7 @@ class SettingsHandler(metaclass=Singleton):
             "language_options": stopwords.fileids(),
             "classifier_running": False,
             "text__vect__ngram_range_options": [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (1, 2), (1, 3), (1, 4), (1, 5)],
+            "scoring_options": sorted(SCORERS.keys()),
         }
 
         self.__settings[SettingsHandler.USER_SETTINGS] = {
@@ -128,9 +141,10 @@ class SettingsHandler(metaclass=Singleton):
             "chi2__k_all": chi2__k_all,
             "chi2__k": chi2__k,  # Select K most informative features
             "clf__C": [1, 2, 3, 10, 100, 1000],  # Compare different values for C parameter
-            "clf__class_weight": ["balanced"],  # Weighted vs non-weighted classes
+            "helper_clf__class_weight": [True, False],
+            "clf__class_weight": [None, "balanced"],  # Weighted vs non-weighted classes
             "do_stemming": True,
-            "scoring": ['f1']
+            "scoring": ['f1'],
         }
 
         self.__settings[SettingsHandler.INTERNAL_SETTINGS] = {}
