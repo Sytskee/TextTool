@@ -5,7 +5,7 @@ import multiprocessing
 import tornado.ioloop
 import tornado.queues
 
-from nltk.corpus import stopwords
+from joblib import parallel_backend
 from pathlib import Path
 from tornado.web import Application
 from user_interface.handlers.IndexHandler import IndexHandler
@@ -52,7 +52,13 @@ def make_app(config_local, current_path_local, config_file_path_local):
     )
 
 
+# Always set parallel backend to multiprocessing for support with freezing
+parallel_backend('multiprocessing')
+
 if __name__ == "__main__":
+    # PyInstaller: When using the multiprocessing module, you must call the following straight after the main check
+    multiprocessing.freeze_support()
+
     current_path = Path(inspect.getfile(inspect.currentframe())).resolve().parent
     config_path = current_path.joinpath("config")
     config_path.mkdir(parents=True, exist_ok=True)
@@ -64,6 +70,7 @@ if __name__ == "__main__":
     config = {}
 
     app = make_app(config, current_path, config_file_path)
+    print("Start listening on port 8888")
     app.listen(8888)
 
     tornado.ioloop.IOLoop.current().start()
