@@ -5,6 +5,8 @@ import multiprocessing
 import tornado.ioloop
 import tornado.queues
 
+import webbrowser
+
 from joblib import parallel_backend
 from pathlib import Path
 from tornado.web import Application
@@ -68,10 +70,12 @@ if __name__ == "__main__":
         config_file_path.write_text(data="{}", encoding="UTF-8")
 
     config = {}
+    port = 8888
 
     app = make_app(config, current_path, config_file_path)
-    print("Start listening on port 8888")
-    app.listen(8888)
+    print("Start listening on port " + str(port))
+    app.listen(port)
+    webbrowser.open('http://localhost:8888', new=2)
 
     tornado.ioloop.IOLoop.current().start()
 
