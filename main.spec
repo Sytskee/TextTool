@@ -3,7 +3,7 @@
 block_cipher = None
 
 
-a = Analysis(['MainHandler.py'],
+a = Analysis(['main.py'],
              pathex=['C:\\Users\\Joost\\develop\\TextTool'],
              binaries=[],
              datas=[],
