@@ -103,7 +103,6 @@ class SettingsHandler(metaclass=Singleton):
 
                 self.__settings[SettingsHandler.CLASSIFIER_SETTINGS][real_key] = result
 
-
     def __set_configuration_defaults(self, current_path):
         self.__settings[SettingsHandler.PROGRAM_SETTINGS] = {
             "software_version": "0.2",
@@ -121,6 +120,8 @@ class SettingsHandler(metaclass=Singleton):
             "output_path": str(current_path.joinpath("output")),
             "language": "english",
             "data_files_path": str(current_path.joinpath("data")),
+            "data_files_path_pickle": str(current_path.joinpath("data")),
+            "pickle_file_path": str(current_path.joinpath("output", "*.pkl")),
         }
 
         chi2__k_start = 10
