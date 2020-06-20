@@ -108,17 +108,16 @@
             </div>
           </div>
         </div>
-        <!-- Tool Model Item -->
+        <!-- Settings Apply Item -->
         <div class="col-lg-4 mr-auto">
-          <div class="portfolio-item mx-auto" data-toggle="modal" data-target="#portfolioModal2">
+          <div class="portfolio-item mx-auto" data-toggle="modal" data-target="#portfolioApply">
             <div class="portfolio-item-caption d-flex align-items-center justify-content-center h-100 w-100">
               <div class="portfolio-item-caption-content text-center text-white">
                 <i class="fas fa-plus fa-3x"></i>
               </div>
             </div>
             <div class="text-center">
-              <i class="fas fa-tags fa-10x"></i>
-              <br/><br/>
+              <i class="fas fa-tags fa-10x py-3"></i>
               <p class="lead">Apply a trained model to assign labels to a new, unlabeled data set.</p>
             </div>
           </div>
@@ -146,18 +145,27 @@
       <!-- Documentation Section Content -->
       <div class="row">
         <div class="col-lg-8 mx-auto">
-          <p class="lead">
+          <!--<p>
             <code id="webapp_settings" class="prettyprint"></code>
-          </p>
-          <p class="lead">
-            <textarea id="logging" rows="10" disabled style="width: 100%"></textarea>
-          </p>
-          <p class="lead">
-            <a id="start_stop" class="btn btn-xl btn-success" onclick="handleStartStopClick(this);" data-settings-category="program">
-              <i class="fas fa-play mr-2"></i>
-              <span>Start</span>
-            </a>
-          </p>
+          </p>-->
+          <span class="pr-3">What do you want to do?</span>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="whatToStart" id="selectClassifier" value="classifier_running" checked>
+            <label class="form-check-label" for="selectClassifier">Classify</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="whatToStart" id="selectPickle" value="apply_pickle_running">
+            <label class="form-check-label" for="selectPickle">Apply pickle</label>
+          </div>
+        </div>
+        <div class="col-lg-8 mx-auto">
+          <a id="start_stop" class="btn btn-xl btn-success" onclick="handleStartStopClick(this);" data-settings-category="program">
+            <i class="fas fa-play mr-2"></i>
+            <span>Start</span>
+          </a>
+        </div>
+        <div class="col-lg-8 mx-auto">
+          <textarea id="logging" rows="10" disabled style="width: 100%"></textarea>
         </div>
       </div>
     </div>
@@ -490,8 +498,8 @@
     </div>
   </div>
 
-  <!-- Portfolio Modal 2 -->
-  <div class="portfolio-modal modal fade" id="portfolioModal2" tabindex="-1" role="dialog" aria-labelledby="portfolioModal2Label" aria-hidden="true">
+  <!-- Portfolio Apply -->
+  <div class="portfolio-modal modal fade" id="portfolioApply" tabindex="-1" role="dialog" aria-labelledby="portfolioApplyLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
       <div class="modal-content">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">

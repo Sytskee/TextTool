@@ -4,21 +4,16 @@ from datetime import datetime
 from io import StringIO
 from json import load, dumps
 from multiprocessing import Process
-from typing import Any
-
-import tornado.web
-from tornado import httputil
 
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 
-from classifier.TextClassifier import TextClassifier
-from classifier.TextClassifier import pipeline_and_parameters2 as pipeline_and_parameters
+from executors.TextClassifier import TextClassifier
+from executors.TextClassifier import pipeline_and_parameters2 as pipeline_and_parameters
 from user_interface.handlers.SettingsHandler import SettingsHandler
 
 
 def start_text_classifier(settings, status_report_queue):
-    # Set variable to language of dataset, e.g. 'dutch', 'english' or any other language supported by NLTK
     error = None
 
     try:
@@ -74,11 +69,15 @@ def start_text_classifier(settings, status_report_queue):
         raise error
 
 
+def start_applying_pickle(settings, status_report_queue):
+    pass
+
+
 class SettingsWebSocket(WebSocketHandler):
     def initialize(self, status_report_queue):
         self.status_report_queue = status_report_queue
 
-        self.text_classification_process = None
+        self.executing_process = None
 
         self.__app_settings_handler = SettingsHandler()
         self.__app_settings_handler.register_onchange(self.setting_changed)
@@ -97,15 +96,15 @@ class SettingsWebSocket(WebSocketHandler):
         changed_setting = load(message_io)
 
         settings = self.__app_settings_handler.get_settings()
-        classifier_running_changed = False
+        application_running_changed = False
 
         for group, value_dict in changed_setting.items():
             for key, value in value_dict.items():
                 if settings[group][key] != value:
                     self.__app_settings_handler.set(group, key, value)
 
-                    if key == "classifier_running":
-                        classifier_running_changed = True
+                    if (group == SettingsHandler.PROGRAM_SETTINGS) and (key in settings[SettingsHandler.PROGRAM_SETTINGS]["executors"]):
+                        application_running_changed = True
 
         self.__app_settings_handler.save_settings()
 
@@ -113,8 +112,8 @@ class SettingsWebSocket(WebSocketHandler):
         settings = self.__app_settings_handler.get_settings()
         self.write_message(settings)
 
-        if classifier_running_changed:
-            self.__classifier_running_changed(settings)
+        if application_running_changed:
+            self.__application_running_changed(settings)
 
     def data_received(self, chunk):
         pass
@@ -131,19 +130,24 @@ class SettingsWebSocket(WebSocketHandler):
         for client, io_loop in io_loops.items():
             io_loop.add_callback(client.write_message, dumps(app_settings_handler.get_settings()))
 
-    def __classifier_running_changed(self, settings):
+    def __application_running_changed(self, settings):
         if settings[SettingsHandler.PROGRAM_SETTINGS].get("classifier_running"):
-            self.text_classification_process = Process(
+            self.executing_process = Process(
                 target=start_text_classifier,
                 args=(settings, self.status_report_queue,),
                 name="Text-Classifier")
-            self.text_classification_process.start()
+            self.executing_process.start()
+        elif settings[SettingsHandler.PROGRAM_SETTINGS].get("apply_pickle_running"):
+            # self.executing_process = Process(# start the pickler)
+            # self.executing_process.start()
+            # TODO: Start applying the pickle
+            self.status_report_queue.put("To be implemented: Start applying the pickle")
         else:
             self.status_report_queue.put("Stop")
 
-            if self.text_classification_process is not None:
-                if self.text_classification_process.is_alive():
-                    self.text_classification_process.terminate()
-                    self.text_classification_process.join(timeout=1)
+            if self.executing_process is not None:
+                if self.executing_process.is_alive():
+                    self.executing_process.terminate()
+                    self.executing_process.join(timeout=1)
 
-                self.text_classification_process = None
+                self.executing_process = None

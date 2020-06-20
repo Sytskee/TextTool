@@ -104,17 +104,21 @@ function setInputs() {
 }
 
 function handleStartStopClick(event) {
-    settings[PROGRAM_SETTINGS]["classifier_running"] = !settings[PROGRAM_SETTINGS]["classifier_running"]
+    var whatToStart = $("section#running_section input[name='whatToStart']:checked").val();
+    settings[PROGRAM_SETTINGS][whatToStart] = !settings[PROGRAM_SETTINGS][whatToStart]
 
     settings_to_send = {}
-    settings_to_send[PROGRAM_SETTINGS] = {"classifier_running": settings[PROGRAM_SETTINGS]["classifier_running"]}
+    settings_to_send[PROGRAM_SETTINGS] = {[whatToStart]: settings[PROGRAM_SETTINGS][whatToStart]}
     settingsWebSocket.send(JSON.stringify(settings_to_send));
 }
 
-function setStartStopButton(classifier_running) {
+function setStartStopButton() {
     var start_stop = $("a#start_stop");
+    var category = start_stop.data("settingsCategory");
 
-    if (settings[start_stop.data("settingsCategory")]["classifier_running"]) {
+    var anyExecutorRunning = settings[category]["executors"].some(executor => settings[category][executor]);
+
+    if (anyExecutorRunning) {
         start_stop
             .addClass("btn-danger")
             .removeClass("btn-success");
@@ -125,8 +129,7 @@ function setStartStopButton(classifier_running) {
         start_stop.children("span").text("Stop");
         $("#logging").val("");
         $("div.modal").find("form input, form select").prop("disabled", true);
-    }
-    else {
+    } else {
         start_stop
             .addClass("btn-success")
             .removeClass("btn-danger");
@@ -139,7 +142,7 @@ function setStartStopButton(classifier_running) {
     }
 }
 
-$("#portfolioTrain input, #portfolioTrain select").change(function() {
+$("div.portfolio-modal input, div.portfolio-modal select").change(function() {
     updateModelButtons($(this).closest("div.modal"));
 });
 
@@ -177,10 +180,10 @@ function updateModelButtons(modal) {
 }
 
 function saveSettings(event) {
-    var modal = $(event).closest("div.modal");
+    var currentModal = $(event).closest("div.modal");
     var changedSettings = {};
 
-    modal.find("input:not([readonly]), select:not([readonly])").each(function(index, element) {
+    currentModal.find("input:not([readonly]), select:not([readonly])").each(function(index, element) {
         element = $(element);
 
         if (element.attr("type") == "checkbox") {
@@ -211,10 +214,10 @@ function saveSettings(event) {
         settingsWebSocket.send(JSON.stringify(changedSettings));
 
         if ($(event).data("dismiss") == "modal") {
-            modal.modal('hide'); // Hide manually because hide via 'data-dismiss' does not work after disabling button
+            currentModal.modal('hide'); // Hide manually because hide via 'data-dismiss' does not work after disabling button
         }
 
-        updateModelButtons(modal);
+        updateModelButtons(currentModal);
     }
 }
 

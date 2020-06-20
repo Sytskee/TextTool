@@ -38,18 +38,17 @@ from sklearn.metrics import confusion_matrix
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC, LinearSVC
 
+from executors.ExecutorBase import ExecutorBase
 from feature_extraction.text.CustomTokenizer import CustomTokenizer
 from feature_selection.SelectAtMostKBest import SelectAtMostKBest
 
 
-class TextClassifier:
+class TextClassifier(ExecutorBase):
     def __init__(self, language, data_files_path, n_splits, output_path, status_report_queue=None):
         self.language = language
-        self.status_report_queue = status_report_queue
-        self.data_files_path = data_files_path
         self.n_splits = n_splits
-        self.output_path = output_path
 
+        self.data = None
         self.pipeline = None
         self.parameters = None
         self.do_stemming = None
@@ -72,7 +71,8 @@ class TextClassifier:
         # self.groups = []
         self.group_number = -1
 
-        self.load_data()
+        super().__init__(data_files_path, output_path, status_report_queue)
+
 
     def load_data(self):
         self.report_status('Loading data ...')
@@ -113,8 +113,7 @@ class TextClassifier:
 
     def report_status(self, message):
         if self.status_report_queue is not None:
-            self.status_report_queue.put(
-                '{} -> {}: {}'.format(datetime.now().strftime('%H:%M:%S'), self.group_number + 1, message))
+            super().report_status('{}: {}'.format(self.group_number + 1, message))
 
     def set_pipeline(self, pipeline):
         self.pipeline = pipeline
