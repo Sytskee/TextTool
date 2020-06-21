@@ -8,13 +8,16 @@ var settings = {}
 var USER_SETTINGS = "user";
 var PROGRAM_SETTINGS = "program";
 var CLASSIFIER_SETTINGS = "classifier";
+$('[data-toggle="tooltip"]').tooltip();
 
 settingsWebSocket.onopen = function(event) {
     $("a#start_stop").removeClass("disabled");
+    $("i#connection").removeClass("text-danger").addClass("text-success");
 };
 
 settingsWebSocket.onclose = function(event) {
     $("a#start_stop").addClass("disabled");
+    $("i#connection").removeClass("text-success").addClass("text-danger");
 };
 
 loggingWebSocket.onmessage = function(event) {
