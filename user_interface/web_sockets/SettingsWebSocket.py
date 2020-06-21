@@ -1,5 +1,6 @@
 import sys
 
+from curses import ascii
 from datetime import datetime
 from io import StringIO
 from json import load, dumps
@@ -65,6 +66,12 @@ def start_text_classifier(settings, status_report_queue):
 
     # All done
     status_report_queue.put('{}: All done!'.format(datetime.now().strftime('%H:%M:%S')))
+    status_report_queue.put(
+        str(ascii.BEL) + dumps({
+            "group": SettingsHandler.PROGRAM_SETTINGS,
+            "key": "apply_pickle_running",
+            "value": False
+        }))
 
     if error is not None:
         raise error

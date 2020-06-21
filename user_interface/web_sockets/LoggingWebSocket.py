@@ -1,4 +1,8 @@
+import json
+import sys
+
 from concurrent.futures import ThreadPoolExecutor
+from curses import ascii
 from queue import Empty
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler, WebSocketClosedError
@@ -33,11 +37,19 @@ class LoggingWebSocket(WebSocketHandler):
             # Blocking call on queue
             message = self.status_report_queue.get(timeout=1)
 
-            # Use the main IOLoop to publish the message
-            self.io_loop.add_callback(self.publish, message)
+            if message.startswith(str(ascii.BEL)):
+                # Control message
+                value_to_set = json.loads(message[1:])
+                self.__app_settings_handler.set(value_to_set['group'], value_to_set['key'], value_to_set['value'])
+            else:
+                # Use the main IOLoop to publish the message
+                self.io_loop.add_callback(self.publish, message)
         except Empty:
             # Ignore timeout and keep trying until connection is closed
             pass
+        except Exception as err:
+            self.io_loop.add_callback(self.publish, "Unexpected error: {0}".format(err))
+            raise
 
         if not self.is_closed:
             # Recursive call to self
@@ -48,7 +60,3 @@ class LoggingWebSocket(WebSocketHandler):
             self.write_message(message + "\r\n")
         except WebSocketClosedError as err:
             print('WebSocketClosedError: {0}'.format(err))
-
-        '''TODO: must be done in a proper way'''
-        if message.endswith('All done!'):
-            self.__app_settings_handler.set(SettingsHandler.PROGRAM_SETTINGS, "classifier_running", False)

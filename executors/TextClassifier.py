@@ -15,7 +15,6 @@ by O. Grisel, P. Prettenhofer, and M. Blondel. This is open source code publishe
 Retrieved on 01-08-2016 from: http://scikit-learn.org/0.15/auto_examples/grid_search_text_feature_extraction.html
 """
 
-import inspect
 import logging
 import os
 import pickle
@@ -72,7 +71,6 @@ class TextClassifier(ExecutorBase):
         self.group_number = -1
 
         super().__init__(data_files_path, output_path, status_report_queue)
-
 
     def load_data(self):
         self.report_status('Loading data ...')
