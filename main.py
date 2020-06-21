@@ -1,6 +1,8 @@
 import inspect
 import json
 import multiprocessing
+import nltk
+import sys
 
 import tornado.ioloop
 import tornado.queues
@@ -60,6 +62,14 @@ parallel_backend('multiprocessing')
 if __name__ == "__main__":
     # PyInstaller: When using the multiprocessing module, you must call the following straight after the main check
     multiprocessing.freeze_support()
+
+    # Check if required data packages are available
+    try:
+        nltk.data.find('tokenizers/punkt')
+        nltk.data.find('corpora/stopwords')
+    except LookupError as error:
+        # The tool requires the above data packages so they need to be installed first before continuing.
+        sys.exit(error)
 
     current_path = Path(inspect.getfile(inspect.currentframe())).resolve().parent
     config_path = current_path.joinpath("config")
