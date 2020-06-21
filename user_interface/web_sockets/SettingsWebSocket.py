@@ -8,6 +8,7 @@ from multiprocessing import Process
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 
+from executors.ApplyPickle import ApplyPickle
 from executors.TextClassifier import TextClassifier
 from executors.TextClassifier import pipeline_and_parameters2 as pipeline_and_parameters
 from user_interface.handlers.SettingsHandler import SettingsHandler
@@ -70,7 +71,32 @@ def start_text_classifier(settings, status_report_queue):
 
 
 def start_applying_pickle(settings, status_report_queue):
-    pass
+    error = None
+
+    try:
+        apply_pickle = ApplyPickle(
+            settings[SettingsHandler.USER_SETTINGS]["data_files_path_pickle"],
+            settings[SettingsHandler.USER_SETTINGS]["pickle_file_path"],
+            settings[SettingsHandler.USER_SETTINGS]["output_path"],
+            status_report_queue)
+
+        apply_pickle.predict()
+    except Exception as exception:
+        print("Unexpected error:", sys.exc_info()[0])
+        status_report_queue.put("Something went wrong: " + str(exception))
+        error = exception
+
+    # All done
+    status_report_queue.put('{}: All done!'.format(datetime.now().strftime('%H:%M:%S')))
+    status_report_queue.put(
+        str(ascii.BEL) + dumps({
+            "group": SettingsHandler.PROGRAM_SETTINGS,
+            "key": "apply_pickle_running",
+            "value": False
+        }))
+
+    if error is not None:
+        raise error
 
 
 class SettingsWebSocket(WebSocketHandler):
@@ -138,10 +164,11 @@ class SettingsWebSocket(WebSocketHandler):
                 name="Text-Classifier")
             self.executing_process.start()
         elif settings[SettingsHandler.PROGRAM_SETTINGS].get("apply_pickle_running"):
-            # self.executing_process = Process(# start the pickler)
-            # self.executing_process.start()
-            # TODO: Start applying the pickle
-            self.status_report_queue.put("To be implemented: Start applying the pickle")
+            self.executing_process = Process(
+                target=start_applying_pickle,
+                args=(settings, self.status_report_queue,),
+                name="Apply-Pickle")
+            self.executing_process.start()
         else:
             self.status_report_queue.put("Stop")
 
