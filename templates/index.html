@@ -187,11 +187,8 @@
 
        <!-- Documentation Section Content -->
       <div class="row">
-        <div class="col-lg-4 ml-auto">
-          <p class="lead">Freelancer is a free bootstrap theme created by Start Bootstrap. The download includes the complete source files including HTML, CSS, and JavaScript as well as optional SASS stylesheets for easy customization.</p>
-        </div>
-        <div class="col-lg-4 mr-auto">
-          <p class="lead">You can create your own custom avatar for the masthead, change the icon in the dividers, and add your email address to the contact form to make it fully functional!</p>
+        <div class="col-lg-8 mx-auto">
+          <p class="lead">More information about this tool can be found in: "Automated supervised text classification tool (ASTeCT): Text mining applied to psychological assessments". <br/>S. Wiegersma, A.J. van Noije, A.M. Sools and B.P. Veldkamp.</p>
         </div>
       </div>
 
@@ -375,7 +372,7 @@
                     </div>
                   </div>
                   <div class="form-group row">
-                    <label for="n_splits" class="col-sm-2 col-form-label">Number of splits</label>
+                    <label for="n_splits" class="col-sm-2 col-form-label">Number of folds</label>
                     <div class="col-sm-10">
                       <input type="number" class="form-control" id="n_splits" min="{{ webapp_settings['user']['n_splits_min'] }}" max="{{ webapp_settings['user']['n_splits_max'] }}" data-settings-category="user">
                     </div>
@@ -452,12 +449,12 @@
                     </div>
                   </div>
                   <div class="form-group row">
-                    <label for="helper_clf__class_weight" class="col-sm-2 col-form-label form-control-label">Use idf</label>
+                    <label for="helper_clf__class_weight" class="col-sm-2 col-form-label form-control-label">Class weight</label>
                     <div class="col-sm-10">
                       <select class="form-control" id="helper_clf__class_weight" data-settings-category="classifier" data-type="array_boolean">
-                        <option value="false">Default (1)</option>
+                        <option value="false">Default</option>
                         <option value="true">Balanced</option>
-                        <option value="true,false">Default (1) and Balanced</option>
+                        <option value="true,false">Default and Balanced</option>
                       </select>
                     </div>
                   </div>
@@ -469,7 +466,7 @@
                     </div>
                   </div>
                   <div class="form-group row">
-                    <label for="scoring" class="col-sm-2 col-form-label">Language</label>
+                    <label for="scoring" class="col-sm-2 col-form-label">Scoring metric</label>
                     <div class="col-sm-10">
                       <select class="form-control selectpicker" multiple id="scoring" data-settings-category="classifier"></select>
                     </div>
@@ -519,7 +516,7 @@
                   </div>
                   <div class="divider-custom-line"></div>
                 </div>
-                <p class="mb-5">Use this to load a previous generated pickle and use it on a data set....... (TODO text)</p>
+                <p class="mb-5">Use this function to load a previously generated pickle file and apply it to a new data set</p>
                 <p class="mb-5">Settings</p>
                 <form>
                   <div class="form-group row">

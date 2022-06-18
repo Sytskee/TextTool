@@ -68,7 +68,7 @@ class SettingsHandler(metaclass=Singleton):
                 dirs = [x for x in new_files_path.iterdir() if x.is_dir()]
                 self.set(SettingsHandler.PROGRAM_SETTINGS, "number_of_classes", dirs.__len__())
             else:
-                self.set(SettingsHandler.PROGRAM_SETTINGS, "number_of_classes", -1)
+                self.set(SettingsHandler.PROGRAM_SETTINGS, "number_of_classes", 0)
                 self.__status_report_queue.put("Not a valid directory selected: " + new_value)
         elif key.startswith("chi2__k_"):
             start = self.get(SettingsHandler.CLASSIFIER_SETTINGS, "chi2__k_start")
@@ -106,7 +106,7 @@ class SettingsHandler(metaclass=Singleton):
     def __set_configuration_defaults(self, current_path):
         self.__settings[SettingsHandler.PROGRAM_SETTINGS] = {
             "software_version": "0.2",
-            "number_of_classes": -1,
+            "number_of_classes": 0,
             "language_options": stopwords.fileids(),
             "classifier_running": False,
             "apply_pickle_running": False,
